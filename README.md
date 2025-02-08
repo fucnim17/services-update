@@ -4,7 +4,7 @@ This script automates the process of updating your Ghostfolio instance and its r
 
 ## Usage
 
-1.  Clone this repository: `git clone git@github.com:fucnim17/update-ghostfolio.git`
+1.  Clone this repository: `git clone https://github.com/fucnim17/update-ghostfolio.git`
 2.  Make the script executable: `chmod +x update-ghostfolio.sh`
 3.  Run the script: `./update-ghostfolio.sh`
 
