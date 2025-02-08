@@ -1,50 +1,52 @@
 #!/bin/bash
 # Copyright (C) 2025 Niklas Fuchshofer
 #
-# Dieses Skript ist unter der GNU General Public License Version 3 oder
-# einer späteren Version lizenziert.
-# Siehe LICENSE-Datei für weitere Details.
+# This script is licensed under the GNU General Public License Version 3 or
+# any later version.
+# See LICENSE file for more details.
 #
 # -----------------------------------------------------------------------------
-# Skript zum Aktualisieren von Ghostfolio und zugehörigen Diensten
+# Script to update Ghostfolio and related services
 
-# Variablen
+# Variables
 COMPOSE_FILE="/root/ghostfolio/docker/docker-compose.yml"
 LOG_FILE="update-ghostfolio.log"
 TIMESTAMP=$(date +%Y-%m-%d_%H-%M-%S)
 
-# Funktionen
+# Functions
 
+# Function to log messages with a timestamp
 log() {
   echo "[${TIMESTAMP}] $1" | tee -a "$LOG_FILE"
 }
 
+# Function to log errors and exit the script
 error() {
   log "ERROR: $1"
   exit 1
 }
 
-# Skriptstart
-log "Starte Ghostfolio Update Skript..."
+# Script start
+log "Starting Ghostfolio Update Script..."
 
 # 1. Docker Compose Pull
-log "Ziehe neueste Docker Images..."
-docker compose -f "$COMPOSE_FILE" pull || error "Docker Compose Pull fehlgeschlagen!"
+log "Pulling latest Docker Images..."
+docker compose -f "$COMPOSE_FILE" pull || error "Docker Compose Pull failed!"
 
 # 2. Docker Compose Up
-log "Starte Docker Compose..."
-docker compose -f "$COMPOSE_FILE" up -d || error "Docker Compose Up fehlgeschlagen!"
+log "Starting Docker Compose..."
+docker compose -f "$COMPOSE_FILE" up -d || error "Docker Compose Up failed!"
 
 # 3. Docker Image Prune
-log "Entferne ungenutzte Docker Images..."
-docker image prune -a -f || log "Docker Image Prune fehlgeschlagen (kein Problem, wenn keine Images entfernt wurden)."
+log "Removing unused Docker Images..."
+docker image prune -a -f || log "Docker Image Prune failed (no problem if no images were removed)."
 
 # 4. Docker Update (Restart Policy)
-log "Aktualisiere Restart Policy für Ghostfolio Container..."
-docker update --restart unless-stopped ghostfolio || error "Docker Update für Ghostfolio fehlgeschlagen!"
-docker update --restart unless-stopped gf-postgres || error "Docker Update für gf-postgres fehlgeschlagen!"
-docker update --restart unless-stopped gf-redis || error "Docker Update für gf-redis fehlgeschlagen!"
+log "Updating Restart Policy for Ghostfolio Container..."
+docker update --restart unless-stopped ghostfolio || error "Docker Update for Ghostfolio failed!"
+docker update --restart unless-stopped gf-postgres || error "Docker Update for gf-postgres failed!"
+docker update --restart unless-stopped gf-redis || error "Docker Update for gf-redis failed!"
 
-# Skriptende
-log "Ghostfolio Update abgeschlossen."
+# Script end
+log "Ghostfolio Update completed."
 exit 0
