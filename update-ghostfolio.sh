@@ -8,11 +8,9 @@
 # -----------------------------------------------------------------------------
 # Script to update Ghostfolio and related services
 
-REPO_ROOT=$(git rev-parse --show-toplevel)
-
 # Variables
 COMPOSE_FILE="/root/ghostfolio/docker/docker-compose.yml"
-LOG_FILE="$REPO_ROOT/update-ghostfolio.log"
+LOG_FILE="/root/update-ghostfolio/update-ghostfolio.log"
 TIMESTAMP=$(date +%Y-%m-%d_%H-%M-%S)
 
 # Functions
