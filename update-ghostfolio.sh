@@ -10,7 +10,7 @@
 
 # Variables
 COMPOSE_FILE="/root/ghostfolio/docker/docker-compose.yml"
-LOG_FILE="update-ghostfolio.log"
+LOG_FILE="/root/update-ghostfolio/update-ghostfolio.log"
 TIMESTAMP=$(date +%Y-%m-%d_%H-%M-%S)
 
 # Functions
