@@ -11,7 +11,7 @@
 # Variables
 GHOSTFOLIO_COMPOSE_FILE="/root/ghostfolio/docker/docker-compose.yml"
 JELLYFIN_COMPOSE_FILE="/root/jellyfin/docker-compose.yml"
-LOG_FILE="/root/update-ghostfolio/services-update.log"
+LOG_FILE="/root/services-update/services-update.log"
 TIMESTAMP=$(date +%Y-%m-%d_%H-%M-%S)
 
 # Functions
@@ -68,7 +68,7 @@ docker image prune -a -f || log "Docker Image Prune failed (no problem if no ima
 
 # 4. Paperless Backup
 log "Starting Paperless Backup..."
-docker compose exec webserver document_exporter ../export -z || error "Paperless document export failed!"
+docker compose exec -T webserver document_exporter ../export -z || error "Paperless document export failed!"
 log "Paperless Backup completed."
 
 # Script end
