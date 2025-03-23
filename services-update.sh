@@ -4,9 +4,9 @@
 # This script is licensed under the GNU General Public License Version 3 or
 # any later version.
 # See LICENSE file for more details.
-#
 # -----------------------------------------------------------------------------
 # Script to update Jellyfin, Ghostfolio and backup Paperless
+# -----------------------------------------------------------------------------
 
 # Variables
 GHOSTFOLIO_COMPOSE_FILE="/root/ghostfolio/docker/docker-compose.yml"
