@@ -11,8 +11,10 @@
 # Variables
 GHOSTFOLIO_COMPOSE_FILE="/root/ghostfolio/docker/docker-compose.yml"
 JELLYFIN_COMPOSE_FILE="/root/jellyfin/docker-compose.yml"
+PAPERLESS_DIRECTORY="/root/paperless-ngx/docker/compose"
 LOG_FILE="/root/services-update/services-update.log"
 TIMESTAMP=$(date +%Y-%m-%d_%H-%M-%S)
+ORIGINAL_DIR=$(pwd)
 
 # Functions
 
@@ -68,7 +70,11 @@ docker image prune -a -f || log "Docker Image Prune failed (no problem if no ima
 
 # 4. Paperless Backup
 log "Starting Paperless Backup..."
-docker compose exec -T webserver document_exporter ../export -z || error "Paperless document export failed!"
+
+cd "$PAPERLESS_DIRECTORY" || error "Could not change to Paperless directory!"
+docker compose exec webserver document_exporter ../export -z || error "Paperless document export failed!"
+cd "$ORIGINAL_DIR" || error "Could not change back to original directory!"
+
 log "Paperless Backup completed."
 
 # Script end
