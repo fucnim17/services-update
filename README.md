@@ -29,6 +29,7 @@ This script can be automated using Cron or run automatically at system reboot.
 The script uses the following configuration by default:
 - Ghostfolio docker-compose file: `/root/ghostfolio/docker/docker-compose.yml`
 - Jellyfin docker-compose file: `/root/jellyfin/docker-compose.yml`
+- Paperless directory: `/root/paperless-ngx/docker/compose`
 - Log file location: `/root/update-ghostfolio/services-update.log`
 
 You can modify the variables at the beginning of the script to customize file paths.
