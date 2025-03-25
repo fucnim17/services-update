@@ -16,6 +16,9 @@ It simplifies maintenance by pulling the latest images, restarting containers, a
 # Clone this repository
 git clone https://github.com/fucnim17/services-update.git
 
+# Change into the repository directory
+cd services-update
+
 # Make the script executable
 chmod +x services-update.sh
 
