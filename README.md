@@ -1,11 +1,12 @@
 # Services Update Script
 
-This script automates the maintenance of multiple services running in Docker containers:
+This script automates the maintenance of multiple services running in Docker and Podman containers:
 
 1. **Jellyfin**: Updates the media server instance
 2. **Ghostfolio**: Updates the personal finance tracking application
-3. **Docker**: Cleans up unused images
-4. **Paperless**: Creates backup exports of your documents
+3. **Paperless**: Updates and creates backup exports of your documents
+4. **PhotoPrism**: Updates the photo management system
+5. **Docker & Podman**: Cleans up unused images
 
 It simplifies maintenance by pulling the latest images, restarting containers, and performing routine tasks to ensure your services are always up-to-date and backed up.
 
@@ -30,16 +31,13 @@ The script uses the following configuration by default:
 - Ghostfolio docker-compose file: `/root/ghostfolio/docker/docker-compose.yml`
 - Jellyfin docker-compose file: `/root/jellyfin/docker-compose.yml`
 - Paperless directory: `/root/paperless-ngx/docker/compose`
-- Log file location: `/root/update-ghostfolio/services-update.log`
+- Log file location: `/root/services-update/services-update.log`
 
 You can modify the variables at the beginning of the script to customize file paths.
 
-## Services Managed
+## Log Management
 
-- **Jellyfin**: Updates the media server containers
-- **Ghostfolio**: Updates finance tracking containers and sets proper restart policies
-- **Paperless**: Creates document backups with compression
-- **Docker**: Prunes unused images to save disk space
+The script maintains a detailed log file with timestamps and separators between each run, making it easy to track updates and troubleshoot issues if they occur.
 
 ## License
 
