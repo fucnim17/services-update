@@ -15,9 +15,16 @@ PAPERLESS_DIRECTORY="/root/paperless-ngx/docker/compose"
 PAPERLESS_COMPOSE_FILE="${PAPERLESS_DIRECTORY}/docker-compose.yml"
 LOG_FILE="/root/services-update/services-update.log"
 TIMESTAMP=$(date +%Y-%m-%d_%H-%M-%S)
+DATE=$(date +%Y-%m-%d)
 ORIGINAL_DIR=$(pwd)
 
-# Functions
+# Function to print a separator line with date
+print_separator() {
+  local message="${1:-}"
+  echo "============================================================" >> "$LOG_FILE"
+  echo "==== ${DATE} - ${message} ====" >> "$LOG_FILE"
+  echo "============================================================" >> "$LOG_FILE"
+}
 
 # Function to log messages with a timestamp
 log() {
@@ -27,10 +34,13 @@ log() {
 # Function to log errors and exit the script
 error() {
   log "ERROR: $1"
+  print_separator "SCRIPT FAILED"
+  echo "" >> "$LOG_FILE"  # Add empty line at the end
   exit 1
 }
 
 # Script start
+print_separator "STARTING SERVICES UPDATE"
 log "Starting Services Update Script..."
 
 # 1. Jellyfin Update
@@ -120,4 +130,6 @@ log "Paperless Backup completed."
 
 # Script end
 log "All services update completed."
+print_separator "SERVICES UPDATE COMPLETED SUCCESSFULLY"
+echo "" >> "$LOG_FILE"
 exit 0
