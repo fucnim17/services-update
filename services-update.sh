@@ -137,7 +137,7 @@ podman image prune -a -f || log "Podman Image Prune failed (no problem if no ima
 log "Starting Paperless Backup..."
 
 cd "$PAPERLESS_DIRECTORY" || error "Could not change to Paperless directory!"
-docker compose exec webserver document_exporter ../export -z || error "Paperless document export failed!"
+docker compose exec webserver document_exporter ../export -z -d || error "Paperless document export failed!"
 cd "$ORIGINAL_DIR" || error "Could not change back to original directory!"
 
 log "Paperless Backup completed."
