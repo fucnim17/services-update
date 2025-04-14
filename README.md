@@ -6,7 +6,8 @@ This script automates the maintenance of multiple services running in Docker and
 2. **Ghostfolio**: Updates the personal finance tracking application
 3. **Paperless**: Updates and creates backup exports of your documents
 4. **PhotoPrism**: Updates the photo management system
-5. **Docker & Podman**: Cleans up unused images
+5. **Memos**: Updates the Memos copntainer
+6. **Docker & Podman**: Cleans up unused images
 
 It simplifies maintenance by pulling the latest images, restarting containers, and performing routine tasks to ensure your services are always up-to-date and backed up.
 
@@ -33,6 +34,7 @@ This script can be automated using Cron or run automatically at system reboot.
 The script uses the following configuration by default:
 - Ghostfolio docker-compose file: `/root/ghostfolio/docker/docker-compose.yml`
 - Jellyfin docker-compose file: `/root/jellyfin/docker-compose.yml`
+- Memos docker-compose file: `/root/memos/docker-compose.yml`
 - Paperless directory: `/root/paperless-ngx/docker/compose`
 - Log file location: `/root/services-update/services-update.log`
 

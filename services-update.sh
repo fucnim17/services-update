@@ -11,6 +11,7 @@
 # Variables
 GHOSTFOLIO_COMPOSE_FILE="/root/ghostfolio/docker/docker-compose.yml"
 JELLYFIN_COMPOSE_FILE="/root/jellyfin/docker-compose.yml"
+MEMOS_COMPOSE_FILE="/root/memos/docker-compose.yml"
 PAPERLESS_DIRECTORY="/root/paperless-ngx/docker/compose"
 PAPERLESS_COMPOSE_FILE="${PAPERLESS_DIRECTORY}/docker-compose.yml"
 LOG_FILE="/root/services-update/services-update.log"
@@ -125,15 +126,26 @@ fi
 
 log "PhotoPrism Update completed."
 
-# 5. Docker Image Prune
+# 5. Memos Update
+log "Starting Memos Update..."
+
+# 5.1 Docker Compose Pull
+log "Pulling latest Memos Docker Images..."
+docker compose -f "$MEMOS_COMPOSE_FILE" pull || error "Memos Docker Compose Pull failed!"
+
+# 5.2 Docker Compose Up
+log "Starting Memos Docker Compose..."
+docker compose -f "$MEMOS_COMPOSE_FILE" up -d || error "Memos Docker Compose Up failed!"
+
+# 6. Docker Image Prune
 log "Removing unused Docker Images..."
 docker image prune -a -f || log "Docker Image Prune failed (no problem if no images were removed)."
 
-# 6. Podman Image Prune
+# 7. Podman Image Prune
 log "Removing unused Podman Images..."
 podman image prune -a -f || log "Podman Image Prune failed (no problem if no images were removed)."
 
-# 7. Paperless Backup
+# 8. Paperless Backup
 log "Starting Paperless Backup..."
 
 cd "$PAPERLESS_DIRECTORY" || error "Could not change to Paperless directory!"
