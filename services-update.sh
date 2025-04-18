@@ -137,6 +137,10 @@ docker compose -f "$MEMOS_COMPOSE_FILE" pull || error "Memos Docker Compose Pull
 log "Starting Memos Docker Compose..."
 docker compose -f "$MEMOS_COMPOSE_FILE" up -d || error "Memos Docker Compose Up failed!"
 
+# 5.3 Docker Update (Restart Policy)
+log "Updating Restart Policy for Memos Container..."
+docker update --restart unless-stopped memos || error "Docker Update for Memos failed!"
+
 # 6. Docker Image Prune
 log "Removing unused Docker Images..."
 docker image prune -a -f || log "Docker Image Prune failed (no problem if no images were removed)."
