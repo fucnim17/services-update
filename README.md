@@ -2,11 +2,12 @@
 
 This script automates the maintenance of multiple services running in Docker and Podman containers:
 
-1. **Jellyfin**: Updates the media server instance
-2. **Paperless**: Updates and creates backup exports of your documents
-3. **PhotoPrism**: Updates the photo management system
-4. **Memos**: Updates the Memos copntainer
-5. **Docker & Podman**: Cleans up unused images
+1. **Jellyfin**
+2. **Paperless**
+3. **PhotoPrism**
+4. **Memos**
+5. **Adguard Home**
+6. **Docker & Podman**
 
 It simplifies maintenance by pulling the latest images, restarting containers, and performing routine tasks to ensure your services are always up-to-date and backed up.
 
