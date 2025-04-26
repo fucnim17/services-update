@@ -5,11 +5,10 @@
 # any later version.
 # See LICENSE file for more details.
 # -----------------------------------------------------------------------------
-# Script to update Jellyfin, Ghostfolio, Paperless, PhotoPrism and backup Paperless
+# Script to update Jellyfin, Paperless, PhotoPrism and backup Paperless
 # -----------------------------------------------------------------------------
 
 # Variables
-GHOSTFOLIO_COMPOSE_FILE="/root/ghostfolio/docker/docker-compose.yml"
 JELLYFIN_COMPOSE_FILE="/root/jellyfin/docker-compose.yml"
 MEMOS_COMPOSE_FILE="/root/memos/docker-compose.yml"
 PAPERLESS_DIRECTORY="/root/paperless-ngx/docker/compose"
@@ -57,57 +56,38 @@ docker compose -f "$JELLYFIN_COMPOSE_FILE" up -d || error "Jellyfin Docker Compo
 
 log "Jellyfin Update completed."
 
-# 2. Ghostfolio Update
-log "Starting Ghostfolio Update..."
-
-# 2.1 Docker Compose Pull
-log "Pulling latest Docker Images..."
-docker compose -f "$GHOSTFOLIO_COMPOSE_FILE" pull || error "Docker Compose Pull failed!"
-
-# 2.2 Docker Compose Up
-log "Starting Docker Compose..."
-docker compose -f "$GHOSTFOLIO_COMPOSE_FILE" up -d || error "Docker Compose Up failed!"
-
-# 2.3 Docker Update (Restart Policy)
-log "Updating Restart Policy for Ghostfolio Container..."
-docker update --restart unless-stopped ghostfolio || error "Docker Update for Ghostfolio failed!"
-docker update --restart unless-stopped gf-postgres || error "Docker Update for gf-postgres failed!"
-docker update --restart unless-stopped gf-redis || error "Docker Update for gf-redis failed!"
-
-log "Ghostfolio Update completed."
-
-# 3. Paperless Update
+# 2. Paperless Update
 log "Starting Paperless Update..."
 
-# 3.1 Change to Paperless directory
+# 2.1 Change to Paperless directory
 cd "$PAPERLESS_DIRECTORY" || error "Could not change to Paperless directory!"
 
-# 3.2 Stop Paperless
+# 2.2 Stop Paperless
 log "Stopping Paperless services..."
 docker compose down || error "Failed to stop Paperless services!"
 
-# 3.3 Pull latest Paperless images
+# 2.3 Pull latest Paperless images
 log "Pulling latest Paperless Docker images..."
 docker compose pull || error "Failed to pull latest Paperless Docker images!"
 
-# 3.4 Start Paperless services
+# 2.4 Start Paperless services
 log "Starting Paperless services..."
 docker compose up -d || error "Failed to start Paperless services!"
 
-# 3.5 Return to original directory
+# 2.5 Return to original directory
 cd "$ORIGINAL_DIR" || error "Could not change back to original directory!"
 
 log "Paperless Update completed."
 
-# 4. PhotoPrism Update
+# 3. PhotoPrism Update
 log "Starting PhotoPrism Update..."
 
-# 4.1 Pull latest images
+# 3.1 Pull latest images
 log "Pulling latest PhotoPrism images..."
 sudo podman pull docker.io/photoprism/photoprism:latest || error "Failed to pull PhotoPrism image!"
 sudo podman pull docker.io/mariadb:latest || error "Failed to pull MariaDB image!"
 
-# 4.2 Restart services in correct order
+# 3.2 Restart services in correct order
 log "Restarting PhotoPrism services..."
 sudo systemctl restart pod-photoprism.service || log "WARNING: Failed to restart pod service"
 sleep 3
@@ -115,7 +95,7 @@ sudo systemctl restart container-photoprism-db.service || log "WARNING: Failed t
 sleep 5 
 sudo systemctl restart container-photoprism-app.service || log "WARNING: Failed to restart app service"
 
-# 4.3 Check if services are running
+# 3.3 Check if services are running
 log "Checking if PhotoPrism services are running..."
 sleep 3
 if [ "$(sudo podman pod ps -f name=photoprism --format '{{.Status}}' | grep -c 'Running')" -gt 0 ]; then
@@ -126,30 +106,26 @@ fi
 
 log "PhotoPrism Update completed."
 
-# 5. Memos Update
+# 4. Memos Update
 log "Starting Memos Update..."
 
-# 5.1 Docker Compose Pull
+# 4.1 Docker Compose Pull
 log "Pulling latest Memos Docker Images..."
 docker compose -f "$MEMOS_COMPOSE_FILE" pull || error "Memos Docker Compose Pull failed!"
 
-# 5.2 Docker Compose Up
+# 4.2 Docker Compose Up
 log "Starting Memos Docker Compose..."
 docker compose -f "$MEMOS_COMPOSE_FILE" up -d || error "Memos Docker Compose Up failed!"
 
-# 5.3 Docker Update (Restart Policy)
-log "Updating Restart Policy for Memos Container..."
-docker update --restart unless-stopped memos || error "Docker Update for Memos failed!"
-
-# 6. Docker Image Prune
+# 5. Docker Image Prune
 log "Removing unused Docker Images..."
 docker image prune -a -f || log "Docker Image Prune failed (no problem if no images were removed)."
 
-# 7. Podman Image Prune
+# 6. Podman Image Prune
 log "Removing unused Podman Images..."
 podman image prune -a -f || log "Podman Image Prune failed (no problem if no images were removed)."
 
-# 8. Paperless Backup
+# 7. Paperless Backup
 log "Starting Paperless Backup..."
 
 cd "$PAPERLESS_DIRECTORY" || error "Could not change to Paperless directory!"
