@@ -11,6 +11,7 @@
 # Variables
 JELLYFIN_COMPOSE_FILE="/root/jellyfin/docker-compose.yml"
 MEMOS_COMPOSE_FILE="/root/memos/docker-compose.yml"
+ADGUARDHOME_COMPOSE_FILE="/root/adguardhome/docker-compose.yml"
 PAPERLESS_DIRECTORY="/root/paperless-ngx/docker/compose"
 PAPERLESS_COMPOSE_FILE="${PAPERLESS_DIRECTORY}/docker-compose.yml"
 LOG_FILE="/root/services-update/services-update.log"
@@ -43,7 +44,7 @@ error() {
 print_separator "STARTING SERVICES UPDATE"
 log "Starting Services Update Script..."
 
-# 1. Jellyfin Update
+# 1. ========== Jellyfin Update ==========
 log "Starting Jellyfin Update..."
 
 # 1.1 Docker Compose Pull
@@ -51,43 +52,72 @@ log "Pulling latest Jellyfin Docker Images..."
 docker compose -f "$JELLYFIN_COMPOSE_FILE" pull || error "Jellyfin Docker Compose Pull failed!"
 
 # 1.2 Docker Compose Up
-log "Starting Jellyfin Docker Compose..."
+log "Starting Jellyfin services..."
 docker compose -f "$JELLYFIN_COMPOSE_FILE" up -d || error "Jellyfin Docker Compose Up failed!"
 
 log "Jellyfin Update completed."
 
-# 2. Paperless Update
+# 2. ========== Memos Update ==========
+log "Starting Memos Update..."
+
+# 2.1 Docker Compose Pull
+log "Pulling latest Memos Docker Images..."
+docker compose -f "$MEMOS_COMPOSE_FILE" pull || error "Memos Docker Compose Pull failed!"
+
+# 2.2 Docker Compose Up
+log "Starting Memos Docker Compose..."
+docker compose -f "$MEMOS_COMPOSE_FILE" up -d || error "Memos Docker Compose Up failed!"
+
+log "Memos Update completed."
+
+# 3. ========== Adguard Home Update ==========
+log "Starting Adguard Home Update..."
+
+# 3.1 Docker Compose Pull
+log "Pulling latest Adguard Home Docker Images..."
+docker compose -f "$ADGUARDHOME_COMPOSE_FILE" pull || error "Adguard Home Docker Compose Pull failed!"
+
+# 3.2 Docker Compose Up
+log "Starting Memos Docker Compose..."
+docker compose -f "$ADGUARDHOME_COMPOSE_FILE" up -d || error "Adguard Home Docker Compose Up failed!"
+
+log "Adgaurd Home Update completed."
+
+# 4. ========== Paperless Backup & Update ==========
+log "Starting Paperless Backup..."
+
+# 4.1 Change to Paperless directory and execute Backup
+cd "$PAPERLESS_DIRECTORY" || error "Could not change to Paperless directory!"
+docker compose exec webserver document_exporter ../export -z -d || error "Paperless document export failed!"
+
 log "Starting Paperless Update..."
 
-# 2.1 Change to Paperless directory
-cd "$PAPERLESS_DIRECTORY" || error "Could not change to Paperless directory!"
-
-# 2.2 Stop Paperless
+# 4.2 Docker Compose Down
 log "Stopping Paperless services..."
 docker compose down || error "Failed to stop Paperless services!"
 
-# 2.3 Pull latest Paperless images
+# 4.3 PDocker Compose Pull
 log "Pulling latest Paperless Docker images..."
 docker compose pull || error "Failed to pull latest Paperless Docker images!"
 
-# 2.4 Start Paperless services
+# 4.4 Docker Compose Up
 log "Starting Paperless services..."
 docker compose up -d || error "Failed to start Paperless services!"
 
-# 2.5 Return to original directory
+# 4.5 Return to original directory
 cd "$ORIGINAL_DIR" || error "Could not change back to original directory!"
 
-log "Paperless Update completed."
+log "Paperless Backup & Update completed."
 
-# 3. PhotoPrism Update
+# 5. ========== PhotoPrism Update ==========
 log "Starting PhotoPrism Update..."
 
-# 3.1 Pull latest images
+# 5.1 Pull latest images
 log "Pulling latest PhotoPrism images..."
 sudo podman pull docker.io/photoprism/photoprism:latest || error "Failed to pull PhotoPrism image!"
 sudo podman pull docker.io/mariadb:latest || error "Failed to pull MariaDB image!"
 
-# 3.2 Restart services in correct order
+# 5.2 Restart services in correct order
 log "Restarting PhotoPrism services..."
 sudo systemctl restart pod-photoprism.service || log "WARNING: Failed to restart pod service"
 sleep 3
@@ -95,7 +125,7 @@ sudo systemctl restart container-photoprism-db.service || log "WARNING: Failed t
 sleep 5 
 sudo systemctl restart container-photoprism-app.service || log "WARNING: Failed to restart app service"
 
-# 3.3 Check if services are running
+# 5.3 Check if services are running
 log "Checking if PhotoPrism services are running..."
 sleep 3
 if [ "$(sudo podman pod ps -f name=photoprism --format '{{.Status}}' | grep -c 'Running')" -gt 0 ]; then
@@ -106,33 +136,13 @@ fi
 
 log "PhotoPrism Update completed."
 
-# 4. Memos Update
-log "Starting Memos Update..."
-
-# 4.1 Docker Compose Pull
-log "Pulling latest Memos Docker Images..."
-docker compose -f "$MEMOS_COMPOSE_FILE" pull || error "Memos Docker Compose Pull failed!"
-
-# 4.2 Docker Compose Up
-log "Starting Memos Docker Compose..."
-docker compose -f "$MEMOS_COMPOSE_FILE" up -d || error "Memos Docker Compose Up failed!"
-
-# 5. Docker Image Prune
+# 6. ========== Docker Image Prune ==========
 log "Removing unused Docker Images..."
 docker image prune -a -f || log "Docker Image Prune failed (no problem if no images were removed)."
 
-# 6. Podman Image Prune
+# 7. ========== Podman Image Prune ==========
 log "Removing unused Podman Images..."
 podman image prune -a -f || log "Podman Image Prune failed (no problem if no images were removed)."
-
-# 7. Paperless Backup
-log "Starting Paperless Backup..."
-
-cd "$PAPERLESS_DIRECTORY" || error "Could not change to Paperless directory!"
-docker compose exec webserver document_exporter ../export -z -d || error "Paperless document export failed!"
-cd "$ORIGINAL_DIR" || error "Could not change back to original directory!"
-
-log "Paperless Backup completed."
 
 # Script end
 log "All services update completed."
