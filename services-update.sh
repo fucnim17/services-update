@@ -10,10 +10,16 @@
 
 # Variables
 JELLYFIN_COMPOSE_FILE="/root/jellyfin/docker-compose.yml"
+
+MEMOS_DIRECTORY="/root/.memos"
 MEMOS_COMPOSE_FILE="/root/memos/docker-compose.yml"
+MEMOS_BACKUP_DIRECTORY="/srv/dev-disk-by-uuid-1662b18d-6525-436b-9831-0d970568c184/paperless-ngx/export"
+
 ADGUARDHOME_COMPOSE_FILE="/root/adguardhome/docker-compose.yml"
+
 PAPERLESS_DIRECTORY="/root/paperless-ngx/docker/compose"
 PAPERLESS_COMPOSE_FILE="${PAPERLESS_DIRECTORY}/docker-compose.yml"
+
 LOG_FILE="/root/services-update/services-update.log"
 TIMESTAMP=$(date +%Y-%m-%d_%H-%M-%S)
 DATE=$(date +%Y-%m-%d)
@@ -57,18 +63,27 @@ docker compose -f "$JELLYFIN_COMPOSE_FILE" up -d || error "Jellyfin Docker Compo
 
 log "Jellyfin Update completed."
 
-# 2. ========== Memos Update ==========
+# 2. ========== Memos Backup & Update ==========
+log "Starting Memos Backup..."
+
+# 2.1 Change to Memos directory and execute Backup
+cd "$MEMOS_DIRECTORY" || error "Could not change to Memos directory!"
+cp -r ~/.memos/memos_prod.db ${MEMOS_BACKUP_DIRECTORY}/memos_prod.db.bak
+
 log "Starting Memos Update..."
 
-# 2.1 Docker Compose Pull
+# 2.2 Docker Compose Pull
 log "Pulling latest Memos Docker Images..."
 docker compose -f "$MEMOS_COMPOSE_FILE" pull || error "Memos Docker Compose Pull failed!"
 
-# 2.2 Docker Compose Up
+# 2.3 Docker Compose Up
 log "Starting Memos Docker Compose..."
 docker compose -f "$MEMOS_COMPOSE_FILE" up -d || error "Memos Docker Compose Up failed!"
 
-log "Memos Update completed."
+# 2.4 Return to original directory
+cd "$ORIGINAL_DIR" || error "Could not change back to original directory!"
+
+log "Memos Backup & Update completed."
 
 # 3. ========== Adguard Home Update ==========
 log "Starting Adguard Home Update..."
