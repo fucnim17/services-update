@@ -7,7 +7,7 @@ This script automates the maintenance of multiple services running in Docker and
 3. **PhotoPrism**
 4. **Memos**
 5. **Adguard Home**
-6. **Docker & Podman**
+6. **Filebrowser**
 
 It simplifies maintenance by pulling the latest images, restarting containers, and performing routine tasks to ensure your services are always up-to-date and backed up.
 
