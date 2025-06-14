@@ -13,7 +13,7 @@ JELLYFIN_COMPOSE_FILE="/root/jellyfin/docker-compose.yml"
 
 MEMOS_DIRECTORY="/root/.memos"
 MEMOS_COMPOSE_FILE="/root/memos/docker-compose.yml"
-MEMOS_BACKUP_DIRECTORY="/srv/dev-disk-by-uuid-1662b18d-6525-436b-9831-0d970568c184/paperless-ngx/export"
+MEMOS_BACKUP_DIRECTORY="/srv/dev-disk-by-uuid-1662b18d-6525-436b-9831-0d970568c184/data/000_Dokumente"
 
 ADGUARDHOME_COMPOSE_FILE="/root/adguardhome/docker-compose.yml"
 
