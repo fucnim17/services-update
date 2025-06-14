@@ -136,11 +136,22 @@ fi
 
 log "PhotoPrism Update completed."
 
-# 6. ========== Docker Image Prune ==========
+# 6. ========== FileBroser Update ==========
+log "Starting FileBrowser Update..."
+
+# 6.1 Pull latest images
+log "Pulling latest FileBrower images..."
+sudo podman pull filebrowser/filebrowser:latest || error "Failed to pull FileBrowser image!"
+
+# 6.2 Restart services in correct order
+log "Restarting FileBrowser services..."
+sudo podman restart filebrowser-app || error "Failed to restart FileBrowser"
+
+# 7. ========== Docker Image Prune ==========
 log "Removing unused Docker Images..."
 docker image prune -a -f || log "Docker Image Prune failed (no problem if no images were removed)."
 
-# 7. ========== Podman Image Prune ==========
+# 8. ========== Podman Image Prune ==========
 log "Removing unused Podman Images..."
 podman image prune -a -f || log "Podman Image Prune failed (no problem if no images were removed)."
 
