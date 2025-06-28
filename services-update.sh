@@ -152,15 +152,15 @@ fi
 log "PhotoPrism Update completed."
 
 # 6. ========== FileBroser Update ==========
-log "Starting FileBrowser Update..."
+# log "Starting FileBrowser Update..."
 
 # 6.1 Pull latest images
-log "Pulling latest FileBrower images..."
-sudo podman pull filebrowser/filebrowser:latest || error "Failed to pull FileBrowser image!"
+# log "Pulling latest FileBrower images..."
+# sudo podman pull docker.io/filebrowser/filebrowser:latest || error "Failed to pull FileBrowser image!"
 
 # 6.2 Restart services in correct order
-log "Restarting FileBrowser services..."
-sudo podman restart filebrowser-app || error "Failed to restart FileBrowser"
+# log "Restarting FileBrowser services..."
+# sudo podman restart filebrowser-app || error "Failed to restart FileBrowser"
 
 # 7. ========== Docker Image Prune ==========
 log "Removing unused Docker Images..."
