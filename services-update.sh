@@ -130,24 +130,10 @@ log "Starting PhotoPrism Update..."
 # 5.1 Pull latest images
 log "Pulling latest PhotoPrism images..."
 sudo podman pull docker.io/photoprism/photoprism:latest || error "Failed to pull PhotoPrism image!"
-sudo podman pull docker.io/mariadb:latest || error "Failed to pull MariaDB image!"
 
-# 5.2 Restart services in correct order
-log "Restarting PhotoPrism services..."
-sudo systemctl restart pod-photoprism.service || log "WARNING: Failed to restart pod service"
-sleep 3
-sudo systemctl restart container-photoprism-db.service || log "WARNING: Failed to restart database service"
-sleep 5 
-sudo systemctl restart container-photoprism-app.service || log "WARNING: Failed to restart app service"
-
-# 5.3 Check if services are running
-log "Checking if PhotoPrism services are running..."
-sleep 3
-if [ "$(sudo podman pod ps -f name=photoprism --format '{{.Status}}' | grep -c 'Running')" -gt 0 ]; then
-    log "PhotoPrism pod is running."
-else
-    log "WARNING: PhotoPrism pod is not running. Check logs with: sudo journalctl -u pod-photoprism.service"
-fi
+# 5.2 Restart service
+log "Restarting PhotoPrism service..."
+sudo systemctl restart pod-photoprism.service || error "Failed to restart PhotoPrism!"
 
 log "PhotoPrism Update completed."
 
