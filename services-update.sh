@@ -10,6 +10,7 @@
 
 TIMESTAMP=$(date +%Y-%m-%d_%H-%M-%S)
 DATE=$(date +%Y-%m-%d)
+ORIGINAL_DIR=$(pwd)
 
 # Load environment variables from .env
 if [[ -f ".env" ]]; then
@@ -109,7 +110,7 @@ if [[ "${UPDATE_PAPERLESS}" == "true" ]]; then
     log "Starting Paperless Backup..."
     cd "$PAPERLESS_DIRECTORY" || error "Could not change to Paperless directory!"
     docker compose exec webserver document_exporter ../export -z -d || error "Paperless document export failed!"
-    cd ~ || error "Could not change back to home directory!"
+    cd "$ORIGINAL_DIR"  || error "Could not change back to home directory!"
 
     # 4.2 Docker Compose Down
     log "Stopping Paperless services..."
