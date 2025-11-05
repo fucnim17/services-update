@@ -8,6 +8,9 @@ This script automates the maintenance of multiple services running in Docker and
 4. **Memos**
 5. **Adguard Home**
 6. **Filebrowser**
+7. **qBittorrent**
+8. **Dockpeek**
+9. **OmniTools**
 
 It simplifies maintenance by pulling the latest images, restarting containers, and performing routine tasks to ensure your services are always up-to-date and backed up.
 
@@ -31,13 +34,7 @@ This script can be automated using Cron or run automatically at system reboot.
 
 ## Configuration
 
-The script uses the following configuration by default:
-- Jellyfin docker-compose file: `/root/jellyfin/docker-compose.yml`
-- Memos docker-compose file: `/root/memos/docker-compose.yml`
-- Paperless directory: `/root/paperless-ngx/docker/compose`
-- Log file location: `/root/services-update/services-update.log`
-
-You can modify the variables at the beginning of the script to customize file paths.
+You can customize file paths and select which services to update by editing the .env file
 
 ## Log Management
 
