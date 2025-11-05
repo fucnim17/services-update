@@ -5,45 +5,39 @@
 # any later version.
 # See LICENSE file for more details.
 # -----------------------------------------------------------------------------
-# Script to update Jellyfin, Paperless, PhotoPrism and backup Paperless
+# Script to update and backup services like Jellyfin, Paperless and PhotoPrism
 # -----------------------------------------------------------------------------
 
-# Variables
-JELLYFIN_COMPOSE_FILE="/root/jellyfin/docker-compose.yml"
-
-MEMOS_DIRECTORY="/root/.memos"
-MEMOS_COMPOSE_FILE="/root/memos/docker-compose.yml"
-MEMOS_BACKUP_DIRECTORY="/srv/dev-disk-by-uuid-1662b18d-6525-436b-9831-0d970568c184/data/000_Dokumente"
-
-ADGUARDHOME_COMPOSE_FILE="/root/adguardhome/docker-compose.yml"
-
-PAPERLESS_DIRECTORY="/root/paperless-ngx/docker/compose"
-PAPERLESS_COMPOSE_FILE="${PAPERLESS_DIRECTORY}/docker-compose.yml"
-
-LOG_FILE="/root/services-update/services-update.log"
 TIMESTAMP=$(date +%Y-%m-%d_%H-%M-%S)
 DATE=$(date +%Y-%m-%d)
-ORIGINAL_DIR=$(pwd)
+
+# Load environment variables from .env
+if [[ -f ".env" ]]; then
+    export $(grep -v '^#' .env | xargs)
+else
+    echo "❌ .env file not found!"
+    exit 1
+fi
 
 # Function to print a separator line with date
 print_separator() {
-  local message="${1:-}"
-  echo "============================================================" >> "$LOG_FILE"
-  echo "==== ${DATE} - ${message} ====" >> "$LOG_FILE"
-  echo "============================================================" >> "$LOG_FILE"
+    local message="${1:-}"
+    echo "============================================================" >> "$LOG_FILE"
+    echo "==== ${DATE} - ${message} ====" 								>> "$LOG_FILE"
+    echo "============================================================" >> "$LOG_FILE"
 }
 
 # Function to log messages with a timestamp
 log() {
-  echo "[${TIMESTAMP}] $1" | tee -a "$LOG_FILE"
+    echo "[${TIMESTAMP}] $1" | tee -a "$LOG_FILE"
 }
 
 # Function to log errors and exit the script
 error() {
-  log "ERROR: $1"
-  print_separator "SCRIPT FAILED"
-  echo "" >> "$LOG_FILE"  # Add empty line at the end
-  exit 1
+    log "ERROR: $1"
+    print_separator "SCRIPT FAILED"
+    echo "" >> "$LOG_FILE"
+    exit 1
 }
 
 # Script start
@@ -51,113 +45,165 @@ print_separator "STARTING SERVICES UPDATE"
 log "Starting Services Update Script..."
 
 # 1. ========== Jellyfin Update ==========
-log "Starting Jellyfin Update..."
+if [[ "${UPDATE_JELLYFIN}" == "true" ]]; then
+    
+    # 1.1 Docker Compose Down
+    log "Stopping Jellyfin services..."
+    docker compose -f "$JELLYFIN_COMPOSE_FILE" down || error "Failed to stop Jellyfin services!"
 
-# 1.1 Docker Compose Pull
-log "Pulling latest Jellyfin Docker Images..."
-docker compose -f "$JELLYFIN_COMPOSE_FILE" pull || error "Jellyfin Docker Compose Pull failed!"
+    # 1.2 Docker Compose Pull
+    log "Pulling latest Jellyfin Docker Images..."
+    docker compose -f "$JELLYFIN_COMPOSE_FILE" pull || error "Jellyfin Docker Compose Pull failed!"
 
-# 1.2 Docker Compose Up
-log "Starting Jellyfin services..."
-docker compose -f "$JELLYFIN_COMPOSE_FILE" up -d || error "Jellyfin Docker Compose Up failed!"
+    # 1.3 Docker Compose Up
+    log "Starting Jellyfin services..."
+    docker compose -f "$JELLYFIN_COMPOSE_FILE" up -d || error "Jellyfin Docker Compose Up failed!"
 
-log "Jellyfin Update completed."
+    log "Jellyfin Update completed."
+fi
 
 # 2. ========== Memos Backup & Update ==========
-log "Starting Memos Backup..."
+if [[ "${UPDATE_MEMOS}" == "true" ]]; then
+    
+    # 2.1 Execute Backup
+    log "Starting Memos Backup..."
+    cp -r "${MEMOS_DIRECTORY}/memos_prod.db" "${MEMOS_BACKUP_DIRECTORY}/memos_prod.db.bak"
 
-# 2.1 Change to Memos directory and execute Backup
-cd "$MEMOS_DIRECTORY" || error "Could not change to Memos directory!"
-cp -r ~/.memos/memos_prod.db ${MEMOS_BACKUP_DIRECTORY}/memos_prod.db.bak
+	# 2.2 Docker Compose Down
+    log "Stopping Memos services..."
+    docker compose -f "$MEMOS_COMPOSE_FILE" down || error "Failed to stop Memos services!"
+  
+    # 2.3 Docker Compose Pull
+    log "Pulling latest Memos Docker Images..."
+    docker compose -f "$MEMOS_COMPOSE_FILE" pull || error "Memos Docker Compose Pull failed!"
 
-log "Starting Memos Update..."
+    # 2.4 Docker Compose Up
+    log "Starting Memos Docker Compose..."
+    docker compose -f "$MEMOS_COMPOSE_FILE" up -d || error "Memos Docker Compose Up failed!"
 
-# 2.2 Docker Compose Pull
-log "Pulling latest Memos Docker Images..."
-docker compose -f "$MEMOS_COMPOSE_FILE" pull || error "Memos Docker Compose Pull failed!"
-
-# 2.3 Docker Compose Up
-log "Starting Memos Docker Compose..."
-docker compose -f "$MEMOS_COMPOSE_FILE" up -d || error "Memos Docker Compose Up failed!"
-
-# 2.4 Return to original directory
-cd "$ORIGINAL_DIR" || error "Could not change back to original directory!"
-
-log "Memos Backup & Update completed."
+    log "Memos Backup & Update completed."
+fi
 
 # 3. ========== Adguard Home Update ==========
-log "Starting Adguard Home Update..."
+if [[ "${UPDATE_ADGUARDHOME}" == "true" ]]; then
+    
+    # 3.1 Docker Compose Down
+    log "Stopping Adguard Home services..."
+    docker compose -f "$ADGUARDHOME_COMPOSE_FILE" down || error "Failed to stop Adguard Home services!"
 
-# 3.1 Docker Compose Pull
-log "Pulling latest Adguard Home Docker Images..."
-docker compose -f "$ADGUARDHOME_COMPOSE_FILE" pull || error "Adguard Home Docker Compose Pull failed!"
+    # 3.2 Docker Compose Pull
+    log "Pulling latest Adguard Home Docker Images..."
+    docker compose -f "$ADGUARDHOME_COMPOSE_FILE" down || error "Adguard Home Docker Compose Pull failed!"
 
-# 3.2 Docker Compose Up
-log "Starting Memos Docker Compose..."
-docker compose -f "$ADGUARDHOME_COMPOSE_FILE" up -d || error "Adguard Home Docker Compose Up failed!"
+    # 3.3 Docker Compose Up
+    log "Starting Adguard Home services..."
+    docker compose -f "$ADGUARDHOME_COMPOSE_FILE" up -d || error "Adguard Home Docker Compose Up failed!"
 
-log "Adgaurd Home Update completed."
+    log "Adguard Home Update completed."
+fi
 
 # 4. ========== Paperless Backup & Update ==========
-log "Starting Paperless Backup..."
+if [[ "${UPDATE_PAPERLESS}" == "true" ]]; then
+    
+    # 4.1 Execute Backup
+    log "Starting Paperless Backup..."
+    cd "$PAPERLESS_DIRECTORY" || error "Could not change to Paperless directory!"
+    docker compose exec webserver document_exporter ../export -z -d || error "Paperless document export failed!"
+    cd ~ || error "Could not change back to home directory!"
 
-# 4.1 Change to Paperless directory and execute Backup
-cd "$PAPERLESS_DIRECTORY" || error "Could not change to Paperless directory!"
-docker compose exec webserver document_exporter ../export -z -d || error "Paperless document export failed!"
+    # 4.2 Docker Compose Down
+    log "Stopping Paperless services..."
+    docker compose -f "$PAPERLESS_COMPOSE_FILE" down || error "Failed to stop Paperless services!"
 
-log "Starting Paperless Update..."
+    # 4.3 Docker Compose Pull
+    log "Pulling latest Paperless Docker images..."
+    docker compose -f "$PAPERLESS_COMPOSE_FILE" down || error "Paperless Docker Compose Pull failed!"
 
-# 4.2 Docker Compose Down
-log "Stopping Paperless services..."
-docker compose down || error "Failed to stop Paperless services!"
+    # 4.4 Docker Compose Up
+    log "Starting Paperless services..."
+    docker compose -f "$PAPERLESS_COMPOSE_FILE" up -d || error "Paperless Docker Compose Up failed!"
 
-# 4.3 PDocker Compose Pull
-log "Pulling latest Paperless Docker images..."
-docker compose pull || error "Failed to pull latest Paperless Docker images!"
-
-# 4.4 Docker Compose Up
-log "Starting Paperless services..."
-docker compose up -d || error "Failed to start Paperless services!"
-
-# 4.5 Return to original directory
-cd "$ORIGINAL_DIR" || error "Could not change back to original directory!"
-
-log "Paperless Backup & Update completed."
+    log "Paperless Backup & Update completed."
+fi
 
 # 5. ========== PhotoPrism Update ==========
-log "Starting PhotoPrism Update..."
+if [[ "${UPDATE_PHOTOPRISM}" == "true" ]]; then
 
-# 5.1 Pull latest images
-log "Pulling latest PhotoPrism images..."
-sudo podman pull docker.io/photoprism/photoprism:latest || error "Failed to pull PhotoPrism image!"
+    # 5.1 Pull latest images
+    log "Pulling latest PhotoPrism images..."
+    sudo podman pull docker.io/photoprism/photoprism:latest || error "Failed to pull PhotoPrism image!"
 
-# 5.2 Restart service
-log "Restarting PhotoPrism service..."
-sudo systemctl restart pod-photoprism.service || error "Failed to restart PhotoPrism!"
+    # 5.2 Restart service
+    log "Restarting PhotoPrism service..."
+    sudo systemctl restart pod-photoprism.service || error "Failed to restart PhotoPrism!"
 
-log "PhotoPrism Update completed."
+    log "PhotoPrism Update completed."
+fi
 
-# 6. ========== FileBroser Update ==========
-# log "Starting FileBrowser Update..."
+# 6. ========== qbittorrent Update ==========
+if [[ "${UPDATE_QBITTORRENT}" == "true" ]]; then
+    
+    # 6.1 Docker Compose Down
+    log "Stopping qbittorrent services..."
+    docker compose -f "$QBITTORRENT_COMPOSE_FILE" down || error "Failed to stop qbittorrent services!"
 
-# 6.1 Pull latest images
-# log "Pulling latest FileBrower images..."
-# sudo podman pull docker.io/filebrowser/filebrowser:latest || error "Failed to pull FileBrowser image!"
+    # 6.2 Docker Compose Pull
+    log "Pulling latest qbittorrent Docker Images..."
+    docker compose -f "$QBITTORRENT_COMPOSE_FILE" down || error "qbittorrent Docker Compose Pull failed!"
 
-# 6.2 Restart services in correct order
-# log "Restarting FileBrowser services..."
-# sudo podman restart filebrowser-app || error "Failed to restart FileBrowser"
+    # 6.3 Docker Compose Up
+    log "Starting qbittorrent services..."
+    docker compose -f "$QBITTORRENT_COMPOSE_FILE" up -d || error "qbittorrente Docker Compose Up failed!"
 
-# 7. ========== Docker Image Prune ==========
+    log "qbittorrent Update completed."
+fi
+
+# 7. ========== Dockpeek Update ==========
+if [[ "${UPDATE_DOCKPEEK}" == "true" ]]; then
+    
+    # 7.1 Docker Compose Down
+    log "Stopping Dockpeek services..."
+    docker compose -f "$DOCKPEEK_COMPOSE_FILE" down || error "Failed to stop Dockpeek services!"
+
+    # 7.2 Docker Compose Pull
+    log "Pulling latest Dockpeek Docker Images..."
+    docker compose -f "$DOCKPEEK_COMPOSE_FILE" down || error "Dockpeek Docker Compose Pull failed!"
+
+    # 7.3 Docker Compose Up
+    log "Starting Dockpeek services..."
+    docker compose -f "$DOCKPEEK_COMPOSE_FILE" up -d || error "Dockpeek Docker Compose Up failed!"
+
+    log "Dockpeek Update completed."
+fi
+
+# 8. ========== OmniTools Update ==========
+if [[ "${UPDATE_OMNITOOLS}" == "true" ]]; then
+    
+    # 8.1 Docker Compose Down
+    log "Stopping OmniTools services..."
+    docker compose -f "$OMNITOOLS_COMPOSE_FILE" down || error "Failed to stop OmniTools services!"
+
+    # 8.2 Docker Compose Pull
+    log "Pulling latest OmniTools Docker Images..."
+    docker compose -f "$OMNITOOLS_COMPOSE_FILE" down || error "OmniTools Docker Compose Pull failed!"
+
+    # 8.3 Docker Compose Up
+    log "Starting OmniTools services..."
+    docker compose -f "$OMNITOOLS_COMPOSE_FILE" up -d || error "OmniTools Docker Compose Up failed!"
+
+    log "OmniTools Update completed."
+fi
+
+# 9. ========== Docker Image Prune ==========
 log "Removing unused Docker Images..."
 docker image prune -a -f || log "Docker Image Prune failed (no problem if no images were removed)."
 
-# 8. ========== Podman Image Prune ==========
+# 10. ========== Podman Image Prune ==========
 log "Removing unused Podman Images..."
 podman image prune -a -f || log "Podman Image Prune failed (no problem if no images were removed)."
 
 # Script end
-log "All services update completed."
+log "All selected services update completed."
 print_separator "SERVICES UPDATE COMPLETED SUCCESSFULLY"
 echo "" >> "$LOG_FILE"
 exit 0
