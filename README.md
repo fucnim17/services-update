@@ -7,7 +7,7 @@ This script automates the maintenance of multiple services running in Docker and
 3. **PhotoPrism**
 4. **Memos**
 5. **Adguard Home**
-6. **Filebrowser**
+6. **Homepage**
 7. **qBittorrent**
 8. **Dockpeek**
 9. **OmniTools**

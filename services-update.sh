@@ -16,7 +16,7 @@ ORIGINAL_DIR=$(pwd)
 if [[ -f ".env" ]]; then
     export $(grep -v '^#' .env | xargs)
 else
-    echo "❌ .env file not found!"
+    echo ".env file not found!"
     exit 1
 fi
 
@@ -24,7 +24,7 @@ fi
 print_separator() {
     local message="${1:-}"
     echo "============================================================" >> "$LOG_FILE"
-    echo "==== ${DATE} - ${message} ====" 								>> "$LOG_FILE"
+    echo "==== ${DATE} - ${message} ===="                                                               >> "$LOG_FILE"
     echo "============================================================" >> "$LOG_FILE"
 }
 
@@ -47,7 +47,7 @@ log "Starting Services Update Script..."
 
 # 1. ========== Jellyfin Update ==========
 if [[ "${UPDATE_JELLYFIN}" == "true" ]]; then
-    
+
     # 1.1 Docker Compose Down
     log "Stopping Jellyfin services..."
     docker compose -f "$JELLYFIN_COMPOSE_FILE" down || error "Failed to stop Jellyfin services!"
@@ -65,15 +65,15 @@ fi
 
 # 2. ========== Memos Backup & Update ==========
 if [[ "${UPDATE_MEMOS}" == "true" ]]; then
-    
+
     # 2.1 Execute Backup
     log "Starting Memos Backup..."
     cp -r "${MEMOS_DIRECTORY}/memos_prod.db" "${MEMOS_BACKUP_DIRECTORY}/memos_prod.db.bak"
 
-	# 2.2 Docker Compose Down
+        # 2.2 Docker Compose Down
     log "Stopping Memos services..."
     docker compose -f "$MEMOS_COMPOSE_FILE" down || error "Failed to stop Memos services!"
-  
+
     # 2.3 Docker Compose Pull
     log "Pulling latest Memos Docker Images..."
     docker compose -f "$MEMOS_COMPOSE_FILE" pull || error "Memos Docker Compose Pull failed!"
@@ -87,7 +87,7 @@ fi
 
 # 3. ========== Adguard Home Update ==========
 if [[ "${UPDATE_ADGUARDHOME}" == "true" ]]; then
-    
+
     # 3.1 Docker Compose Down
     log "Stopping Adguard Home services..."
     docker compose -f "$ADGUARDHOME_COMPOSE_FILE" down || error "Failed to stop Adguard Home services!"
@@ -105,7 +105,7 @@ fi
 
 # 4. ========== Paperless Backup & Update ==========
 if [[ "${UPDATE_PAPERLESS}" == "true" ]]; then
-    
+
     # 4.1 Execute Backup
     log "Starting Paperless Backup..."
     cd "$PAPERLESS_DIRECTORY" || error "Could not change to Paperless directory!"
@@ -143,7 +143,7 @@ fi
 
 # 6. ========== qbittorrent Update ==========
 if [[ "${UPDATE_QBITTORRENT}" == "true" ]]; then
-    
+
     # 6.1 Docker Compose Down
     log "Stopping qbittorrent services..."
     docker compose -f "$QBITTORRENT_COMPOSE_FILE" down || error "Failed to stop qbittorrent services!"
@@ -161,7 +161,7 @@ fi
 
 # 7. ========== Dockpeek Update ==========
 if [[ "${UPDATE_DOCKPEEK}" == "true" ]]; then
-    
+
     # 7.1 Docker Compose Down
     log "Stopping Dockpeek services..."
     docker compose -f "$DOCKPEEK_COMPOSE_FILE" down || error "Failed to stop Dockpeek services!"
@@ -179,7 +179,7 @@ fi
 
 # 8. ========== OmniTools Update ==========
 if [[ "${UPDATE_OMNITOOLS}" == "true" ]]; then
-    
+
     # 8.1 Docker Compose Down
     log "Stopping OmniTools services..."
     docker compose -f "$OMNITOOLS_COMPOSE_FILE" down || error "Failed to stop OmniTools services!"
@@ -195,11 +195,29 @@ if [[ "${UPDATE_OMNITOOLS}" == "true" ]]; then
     log "OmniTools Update completed."
 fi
 
-# 9. ========== Docker Image Prune ==========
+# 9. ========== Homepage Update ==========
+if [[ "${UPDATE_HOMEPAGE}" == "true" ]]; then
+
+    # 9.1 Docker Compose Down
+    log "Stopping Homepage services..."
+    docker compose -f "$HOMEPAGE_COMPOSE_FILE" down || error "Failed to stop Homepage services!"
+
+    # 9.2 Docker Compose Pull
+    log "Pulling latest Homepage Docker Images..."
+    docker compose -f "$HOMEPAGE_COMPOSE_FILE" down || error "Homepage Docker Compose Pull failed!"
+
+    # 9.3 Docker Compose Up
+    log "Starting Homepage services..."
+    docker compose -f "$HOMEPAGE_COMPOSE_FILE" up -d || error "Homepage Docker Compose Up failed!"
+
+    log "Homepage Update completed."
+fi
+
+# 10. ========== Docker Image Prune ==========
 log "Removing unused Docker Images..."
 docker image prune -a -f || log "Docker Image Prune failed (no problem if no images were removed)."
 
-# 10. ========== Podman Image Prune ==========
+# 11. ========== Podman Image Prune ==========
 log "Removing unused Podman Images..."
 podman image prune -a -f || log "Podman Image Prune failed (no problem if no images were removed)."
 
