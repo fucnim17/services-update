@@ -23,6 +23,9 @@ git clone https://github.com/fucnim17/services-update.git
 # Change into the repository directory
 cd services-update
 
+# Create a .env file (see below for content)
+nano .env
+
 # Make the script executable
 chmod +x services-update.sh
 
@@ -34,7 +37,69 @@ This script can be automated using Cron or run automatically at system reboot.
 
 ## Configuration
 
-You can customize file paths and select which services to update by editing the .env file
+You can customize file paths and select which services to update by editing the .env file.
+
+```bash
+##################### - Jellyfin - ####################
+
+UPDATE_JELLYFIN=false
+JELLYFIN_COMPOSE_FILE=""
+
+#-------------------------------------------------------
+###################### - Memos - #######################
+
+UPDATE_MEMOS=false
+MEMOS_DIRECTORY=""
+MEMOS_COMPOSE_FILE=""
+MEMOS_BACKUP_DIRECTORY=""
+
+#-------------------------------------------------------
+################### - AdGuard Home - ###################
+
+UPDATE_ADGUARDHOME=false
+ADGUARDHOME_COMPOSE_FILE=""
+
+#-------------------------------------------------------
+################## - Paperless-ngx - ###################
+
+UPDATE_PAPERLESS=false
+PAPERLESS_DIRECTORY=""
+PAPERLESS_COMPOSE_FILE=""
+
+#-------------------------------------------------------
+################ - PhotoPrism (omv) - ##################
+
+UPDATE_PHOTOPRISM=false
+
+#-------------------------------------------------------
+################### - qBittorrent - ####################
+
+UPDATE_QBITTORRENT=false
+QBITTORRENT_COMPOSE_FILE=""
+
+#-------------------------------------------------------
+#################### - Dockpeek - ######################
+
+UPDATE_DOCKPEEK=false
+DOCKPEEK_COMPOSE_FILE=""
+
+#-------------------------------------------------------
+#################### - OmniTools - ######################
+
+UPDATE_OMNITOOLS=false
+OMNITOOLS_COMPOSE_FILE=""
+
+#-------------------------------------------------------
+##################### - Homepage - ######################
+
+UPDATE_HOMEPAGE=false
+HOMEPAGE_COMPOSE_FILE=""
+
+#-------------------------------------------------------
+
+LOG_FILE="./services-update.log"
+
+```
 
 ## Log Management
 
