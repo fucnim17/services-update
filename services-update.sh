@@ -12,11 +12,13 @@ TIMESTAMP=$(date +%Y-%m-%d_%H-%M-%S)
 DATE=$(date +%Y-%m-%d)
 ORIGINAL_DIR=$(pwd)
 
-# Load environment variables from .env
-if [[ -f ".env" ]]; then
-    export $(grep -v '^#' .env | xargs)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Load environment variables from .env in script directory
+if [[ -f "$SCRIPT_DIR/.env" ]]; then
+    export $(grep -v '^#' "$SCRIPT_DIR/.env" | xargs)
 else
-    echo ".env file not found!"
+    echo ".env file not found in script directory: $SCRIPT_DIR"
     exit 1
 fi
 
