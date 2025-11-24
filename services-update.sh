@@ -94,7 +94,7 @@ if [[ "${UPDATE_ADGUARDHOME}" == "true" ]]; then
 
     # 3.2 Docker Compose Pull
     log "Pulling latest Adguard Home Docker Images..."
-    docker compose -f "$ADGUARDHOME_COMPOSE_FILE" down || error "Adguard Home Docker Compose Pull failed!"
+    docker compose -f "$ADGUARDHOME_COMPOSE_FILE" pull || error "Adguard Home Docker Compose Pull failed!"
 
     # 3.3 Docker Compose Up
     log "Starting Adguard Home services..."
@@ -118,7 +118,7 @@ if [[ "${UPDATE_PAPERLESS}" == "true" ]]; then
 
     # 4.3 Docker Compose Pull
     log "Pulling latest Paperless Docker images..."
-    docker compose -f "$PAPERLESS_COMPOSE_FILE" down || error "Paperless Docker Compose Pull failed!"
+    docker compose -f "$PAPERLESS_COMPOSE_FILE" pull || error "Paperless Docker Compose Pull failed!"
 
     # 4.4 Docker Compose Up
     log "Starting Paperless services..."
@@ -150,7 +150,7 @@ if [[ "${UPDATE_QBITTORRENT}" == "true" ]]; then
 
     # 6.2 Docker Compose Pull
     log "Pulling latest qbittorrent Docker Images..."
-    docker compose -f "$QBITTORRENT_COMPOSE_FILE" down || error "qbittorrent Docker Compose Pull failed!"
+    docker compose -f "$QBITTORRENT_COMPOSE_FILE" pull || error "qbittorrent Docker Compose Pull failed!"
 
     # 6.3 Docker Compose Up
     log "Starting qbittorrent services..."
@@ -168,7 +168,7 @@ if [[ "${UPDATE_DOCKPEEK}" == "true" ]]; then
 
     # 7.2 Docker Compose Pull
     log "Pulling latest Dockpeek Docker Images..."
-    docker compose -f "$DOCKPEEK_COMPOSE_FILE" down || error "Dockpeek Docker Compose Pull failed!"
+    docker compose -f "$DOCKPEEK_COMPOSE_FILE" pull || error "Dockpeek Docker Compose Pull failed!"
 
     # 7.3 Docker Compose Up
     log "Starting Dockpeek services..."
@@ -186,7 +186,7 @@ if [[ "${UPDATE_OMNITOOLS}" == "true" ]]; then
 
     # 8.2 Docker Compose Pull
     log "Pulling latest OmniTools Docker Images..."
-    docker compose -f "$OMNITOOLS_COMPOSE_FILE" down || error "OmniTools Docker Compose Pull failed!"
+    docker compose -f "$OMNITOOLS_COMPOSE_FILE" pull || error "OmniTools Docker Compose Pull failed!"
 
     # 8.3 Docker Compose Up
     log "Starting OmniTools services..."
@@ -204,7 +204,7 @@ if [[ "${UPDATE_HOMEPAGE}" == "true" ]]; then
 
     # 9.2 Docker Compose Pull
     log "Pulling latest Homepage Docker Images..."
-    docker compose -f "$HOMEPAGE_COMPOSE_FILE" down || error "Homepage Docker Compose Pull failed!"
+    docker compose -f "$HOMEPAGE_COMPOSE_FILE" pull || error "Homepage Docker Compose Pull failed!"
 
     # 9.3 Docker Compose Up
     log "Starting Homepage services..."
