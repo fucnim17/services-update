@@ -22,11 +22,13 @@ else
     exit 1
 fi
 
+LOG_FILE="$(cd "$(dirname "$LOG_FILE")" && pwd)/$(basename "$LOG_FILE")"
+
 # Function to print a separator line with date
 print_separator() {
     local message="${1:-}"
     echo "============================================================" >> "$LOG_FILE"
-    echo "==== ${DATE} - ${message} ===="                                                               >> "$LOG_FILE"
+    echo "==== ${DATE} - ${message} ===="                               >> "$LOG_FILE"
     echo "============================================================" >> "$LOG_FILE"
 }
 
