@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (C) 2025 Niklas Fuchshofer
+# Copyright (C) 2026 Niklas Fuchshofer
 #
 # This script is licensed under the GNU General Public License Version 3 or
 # any later version.
@@ -74,7 +74,7 @@ if [[ "${UPDATE_MEMOS}" == "true" ]]; then
     log "Starting Memos Backup..."
     cp -r "${MEMOS_DIRECTORY}/memos_prod.db" "${MEMOS_BACKUP_DIRECTORY}/memos_prod.db.bak"
 
-        # 2.2 Docker Compose Down
+    # 2.2 Docker Compose Down
     log "Stopping Memos services..."
     docker compose -f "$MEMOS_COMPOSE_FILE" down || error "Failed to stop Memos services!"
 
@@ -134,13 +134,17 @@ fi
 # 5. ========== PhotoPrism Update ==========
 if [[ "${UPDATE_PHOTOPRISM}" == "true" ]]; then
 
-    # 5.1 Pull latest images
+    # 5.1 Stop service
+    log "Stopping PhotoPrism service..."
+    sudo systemctl stop pod-photoprism.service || error "Failed to stop PhotoPrism image!"
+
+    # 5.2 Pull latest images
     log "Pulling latest PhotoPrism images..."
     sudo podman pull docker.io/photoprism/photoprism:latest || error "Failed to pull PhotoPrism image!"
 
-    # 5.2 Restart service
-    log "Restarting PhotoPrism service..."
-    sudo systemctl restart pod-photoprism.service || error "Failed to restart PhotoPrism!"
+    # 5.3 Start service
+    log "Starting PhotoPrism service..."
+    sudo systemctl start pod-photoprism.service || error "Failed to start PhotoPrism!"
 
     log "PhotoPrism Update completed."
 fi
