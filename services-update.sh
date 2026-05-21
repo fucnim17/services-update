@@ -113,7 +113,7 @@ if [[ "${UPDATE_PAPERLESS}" == "true" ]]; then
     # 4.1 Execute Backup
     log "Starting Paperless Backup..."
     cd "$PAPERLESS_DIRECTORY" || error "Could not change to Paperless directory!"
-    docker compose exec webserver document_exporter ../export -z -d || error "Paperless document export failed!"
+    docker compose exec webserver document_exporter ../export -z -d --no-progress-bar || error "Paperless document export failed!"
     cd "$ORIGINAL_DIR"  || error "Could not change back to home directory!"
 
     # 4.2 Docker Compose Down
@@ -221,13 +221,13 @@ if [[ "${UPDATE_HOMEPAGE}" == "true" ]]; then
     log "Homepage Update completed."
 fi
 
-# 10. ========== Docker Image Prune ==========
-log "Removing unused Docker Images..."
-docker image prune -a -f || log "Docker Image Prune failed (no problem if no images were removed)."
+# 10. ========== Docker System Prune ==========
+log "Removing unused Docker containers, images, networks, and build cache..."
+docker system prune -a -f || log "Docker System Prune failed."
 
-# 11. ========== Podman Image Prune ==========
-log "Removing unused Podman Images..."
-podman image prune -a -f || log "Podman Image Prune failed (no problem if no images were removed)."
+# 11. ========== Podman System Prune ==========
+log "Removing unused Podman containers, images, networks, and build cache..."
+podman system prune -a -f || log "Podman System Prune failed."
 
 # Script end
 log "All selected services update completed."
