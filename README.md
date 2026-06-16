@@ -49,9 +49,7 @@ JELLYFIN_COMPOSE_FILE=""
 ###################### - Memos - #######################
 
 UPDATE_MEMOS=false
-MEMOS_DIRECTORY=""
 MEMOS_COMPOSE_FILE=""
-MEMOS_BACKUP_DIRECTORY=""
 
 #-------------------------------------------------------
 ################### - AdGuard Home - ###################
