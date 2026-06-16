@@ -70,23 +70,19 @@ fi
 # 2. ========== Memos Backup & Update ==========
 if [[ "${UPDATE_MEMOS}" == "true" ]]; then
 
-    # 2.1 Execute Backup
-    log "Starting Memos Backup..."
-    cp -r "${MEMOS_DIRECTORY}/memos_prod.db" "${MEMOS_BACKUP_DIRECTORY}/memos_prod.db.bak"
-
-    # 2.2 Docker Compose Down
+    # 2.1 Docker Compose Down
     log "Stopping Memos services..."
     docker compose -f "$MEMOS_COMPOSE_FILE" down || error "Failed to stop Memos services!"
 
-    # 2.3 Docker Compose Pull
+    # 2.2 Docker Compose Pull
     log "Pulling latest Memos Docker Images..."
     docker compose -f "$MEMOS_COMPOSE_FILE" pull || error "Memos Docker Compose Pull failed!"
 
-    # 2.4 Docker Compose Up
+    # 2.3 Docker Compose Up
     log "Starting Memos Docker Compose..."
     docker compose -f "$MEMOS_COMPOSE_FILE" up -d || error "Memos Docker Compose Up failed!"
 
-    log "Memos Backup & Update completed."
+    log "Memos Update completed."
 fi
 
 # 3. ========== Adguard Home Update ==========
