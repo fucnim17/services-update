@@ -67,7 +67,7 @@ if [[ "${UPDATE_JELLYFIN}" == "true" ]]; then
     log "Jellyfin Update completed."
 fi
 
-# 2. ========== Memos Backup & Update ==========
+# 2. ========== Memos Update ==========
 if [[ "${UPDATE_MEMOS}" == "true" ]]; then
 
     # 2.1 Docker Compose Down
