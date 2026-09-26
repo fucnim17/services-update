@@ -8,7 +8,9 @@
 # Script to update and backup services like Jellyfin, Paperless and PhotoPrism
 # -----------------------------------------------------------------------------
 
-TIMESTAMP=$(date +%Y-%m-%d_%H-%M-%S)
+# Abort on unset variables and report failures inside pipelines
+set -uo pipefail
+
 DATE=$(date +%Y-%m-%d)
 ORIGINAL_DIR=$(pwd)
 
@@ -16,33 +18,57 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Load environment variables from .env in script directory
 if [[ -f "$SCRIPT_DIR/.env" ]]; then
-    export $(grep -v '^#' "$SCRIPT_DIR/.env" | xargs)
+    set -a
+    # shellcheck disable=SC1091
+    . "$SCRIPT_DIR/.env"
+    set +a
 else
     echo ".env file not found in script directory: $SCRIPT_DIR"
     exit 1
 fi
 
-LOG_FILE="$(cd "$(dirname "$LOG_FILE")" && pwd)/$(basename "$LOG_FILE")"
+# Resolve the log file path before anything is written to it
+if [[ -z "${LOG_FILE:-}" ]]; then
+    echo "LOG_FILE is not set in $SCRIPT_DIR/.env"
+    exit 1
+fi
+
+if ! LOG_DIR="$(cd "$(dirname "$LOG_FILE")" 2>/dev/null && pwd)"; then
+    echo "Log directory does not exist: $(dirname "$LOG_FILE")"
+    exit 1
+fi
+LOG_FILE="$LOG_DIR/$(basename "$LOG_FILE")"
+
+# Send everything - including the output of the docker/podman commands - to the
+# terminal and to the log file, so a failure reason is recorded as well
+exec > >(tee -a "$LOG_FILE") 2>&1
 
 # Function to print a separator line with date
 print_separator() {
     local message="${1:-}"
-    echo "============================================================" >> "$LOG_FILE"
-    echo "==== ${DATE} - ${message} ===="                               >> "$LOG_FILE"
-    echo "============================================================" >> "$LOG_FILE"
+    echo "============================================================"
+    echo "==== ${DATE} - ${message} ===="
+    echo "============================================================"
 }
 
 # Function to log messages with a timestamp
 log() {
-    echo "[${TIMESTAMP}] $1" | tee -a "$LOG_FILE"
+    echo "[$(date +%Y-%m-%d_%H-%M-%S)] $1"
 }
 
 # Function to log errors and exit the script
 error() {
     log "ERROR: $1"
     print_separator "SCRIPT FAILED"
-    echo "" >> "$LOG_FILE"
+    echo ""
     exit 1
+}
+
+# Function to verify that an enabled service is configured correctly
+require_compose() {
+    local name="$1" file="${2:-}"
+    [[ -n "$file" ]] || error "$name is enabled but its compose file path is not set!"
+    [[ -f "$file" ]] || error "$name compose file not found: $file"
 }
 
 # Script start
@@ -50,7 +76,9 @@ print_separator "STARTING SERVICES UPDATE"
 log "Starting Services Update Script..."
 
 # 1. ========== Jellyfin Update ==========
-if [[ "${UPDATE_JELLYFIN}" == "true" ]]; then
+if [[ "${UPDATE_JELLYFIN:-}" == "true" ]]; then
+
+    require_compose "Jellyfin" "${JELLYFIN_COMPOSE_FILE:-}"
 
     # 1.1 Docker Compose Down
     log "Stopping Jellyfin services..."
@@ -68,7 +96,9 @@ if [[ "${UPDATE_JELLYFIN}" == "true" ]]; then
 fi
 
 # 2. ========== Memos Update ==========
-if [[ "${UPDATE_MEMOS}" == "true" ]]; then
+if [[ "${UPDATE_MEMOS:-}" == "true" ]]; then
+
+    require_compose "Memos" "${MEMOS_COMPOSE_FILE:-}"
 
     # 2.1 Docker Compose Down
     log "Stopping Memos services..."
@@ -86,7 +116,9 @@ if [[ "${UPDATE_MEMOS}" == "true" ]]; then
 fi
 
 # 3. ========== Adguard Home Update ==========
-if [[ "${UPDATE_ADGUARDHOME}" == "true" ]]; then
+if [[ "${UPDATE_ADGUARDHOME:-}" == "true" ]]; then
+
+    require_compose "Adguard Home" "${ADGUARDHOME_COMPOSE_FILE:-}"
 
     # 3.1 Docker Compose Down
     log "Stopping Adguard Home services..."
@@ -104,12 +136,16 @@ if [[ "${UPDATE_ADGUARDHOME}" == "true" ]]; then
 fi
 
 # 4. ========== Paperless Backup & Update ==========
-if [[ "${UPDATE_PAPERLESS}" == "true" ]]; then
+if [[ "${UPDATE_PAPERLESS:-}" == "true" ]]; then
+
+    require_compose "Paperless" "${PAPERLESS_COMPOSE_FILE:-}"
+    [[ -n "${PAPERLESS_DIRECTORY:-}" ]] || error "Paperless is enabled but PAPERLESS_DIRECTORY is not set!"
+    [[ -d "$PAPERLESS_DIRECTORY" ]] || error "Paperless directory not found: $PAPERLESS_DIRECTORY"
 
     # 4.1 Execute Backup
     log "Starting Paperless Backup..."
     cd "$PAPERLESS_DIRECTORY" || error "Could not change to Paperless directory!"
-    docker compose exec webserver document_exporter ../export -z -d --no-progress-bar || error "Paperless document export failed!"
+    docker compose exec -T webserver document_exporter ../export -z -d --no-progress-bar || error "Paperless document export failed!"
     cd "$ORIGINAL_DIR"  || error "Could not change back to home directory!"
 
     # 4.2 Docker Compose Down
@@ -128,7 +164,7 @@ if [[ "${UPDATE_PAPERLESS}" == "true" ]]; then
 fi
 
 # 5. ========== PhotoPrism Update ==========
-if [[ "${UPDATE_PHOTOPRISM}" == "true" ]]; then
+if [[ "${UPDATE_PHOTOPRISM:-}" == "true" ]]; then
 
     # 5.1 Stop service
     log "Stopping PhotoPrism service..."
@@ -146,7 +182,9 @@ if [[ "${UPDATE_PHOTOPRISM}" == "true" ]]; then
 fi
 
 # 6. ========== qbittorrent Update ==========
-if [[ "${UPDATE_QBITTORRENT}" == "true" ]]; then
+if [[ "${UPDATE_QBITTORRENT:-}" == "true" ]]; then
+
+    require_compose "qbittorrent" "${QBITTORRENT_COMPOSE_FILE:-}"
 
     # 6.1 Docker Compose Down
     log "Stopping qbittorrent services..."
@@ -158,13 +196,15 @@ if [[ "${UPDATE_QBITTORRENT}" == "true" ]]; then
 
     # 6.3 Docker Compose Up
     log "Starting qbittorrent services..."
-    docker compose -f "$QBITTORRENT_COMPOSE_FILE" up -d || error "qbittorrente Docker Compose Up failed!"
+    docker compose -f "$QBITTORRENT_COMPOSE_FILE" up -d || error "qbittorrent Docker Compose Up failed!"
 
     log "qbittorrent Update completed."
 fi
 
 # 7. ========== Dockpeek Update ==========
-if [[ "${UPDATE_DOCKPEEK}" == "true" ]]; then
+if [[ "${UPDATE_DOCKPEEK:-}" == "true" ]]; then
+
+    require_compose "Dockpeek" "${DOCKPEEK_COMPOSE_FILE:-}"
 
     # 7.1 Docker Compose Down
     log "Stopping Dockpeek services..."
@@ -182,7 +222,9 @@ if [[ "${UPDATE_DOCKPEEK}" == "true" ]]; then
 fi
 
 # 8. ========== OmniTools Update ==========
-if [[ "${UPDATE_OMNITOOLS}" == "true" ]]; then
+if [[ "${UPDATE_OMNITOOLS:-}" == "true" ]]; then
+
+    require_compose "OmniTools" "${OMNITOOLS_COMPOSE_FILE:-}"
 
     # 8.1 Docker Compose Down
     log "Stopping OmniTools services..."
@@ -200,7 +242,9 @@ if [[ "${UPDATE_OMNITOOLS}" == "true" ]]; then
 fi
 
 # 9. ========== Homepage Update ==========
-if [[ "${UPDATE_HOMEPAGE}" == "true" ]]; then
+if [[ "${UPDATE_HOMEPAGE:-}" == "true" ]]; then
+
+    require_compose "Homepage" "${HOMEPAGE_COMPOSE_FILE:-}"
 
     # 9.1 Docker Compose Down
     log "Stopping Homepage services..."
@@ -228,5 +272,5 @@ podman system prune -a -f || log "Podman System Prune failed."
 # Script end
 log "All selected services update completed."
 print_separator "SERVICES UPDATE COMPLETED SUCCESSFULLY"
-echo "" >> "$LOG_FILE"
+echo ""
 exit 0
