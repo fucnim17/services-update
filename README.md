@@ -11,6 +11,7 @@ This script automates the maintenance of multiple services running in Docker and
 7. **qBittorrent**
 8. **Dockpeek**
 9. **OmniTools**
+10. **Pangolin**
 
 It simplifies maintenance by pulling the latest images, restarting containers, and performing routine tasks to ensure your services are always up-to-date and backed up.
 
@@ -92,6 +93,12 @@ OMNITOOLS_COMPOSE_FILE=""
 
 UPDATE_HOMEPAGE=false
 HOMEPAGE_COMPOSE_FILE=""
+
+#-------------------------------------------------------
+##################### - Pangolin - ######################
+
+UPDATE_PANGOLIN=false
+PANGOLIN_COMPOSE_FILE=""
 
 #-------------------------------------------------------
 

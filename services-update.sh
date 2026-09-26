@@ -270,11 +270,31 @@ if [[ "${UPDATE_HOMEPAGE:-}" == "true" ]]; then
     log "Homepage Update completed."
 fi
 
-# 10. ========== Docker System Prune ==========
+# 10. ========== Pangolin Update ==========
+if [[ "${UPDATE_PANGOLIN:-}" == "true" ]]; then
+
+    require_compose "Pangolin" "${PANGOLIN_COMPOSE_FILE:-}"
+
+    # 10.1 Docker Compose Down
+    log "Stopping Pangolin services..."
+    docker compose -f "$PANGOLIN_COMPOSE_FILE" down || error "Failed to stop Pangolin services!"
+
+    # 10.2 Docker Compose Pull
+    log "Pulling latest Pangolin Docker Images..."
+    docker compose -f "$PANGOLIN_COMPOSE_FILE" pull || error "Pangolin Docker Compose Pull failed!"
+
+    # 10.3 Docker Compose Up
+    log "Starting Pangolin services..."
+    docker compose -f "$PANGOLIN_COMPOSE_FILE" up -d || error "Pangolin Docker Compose Up failed!"
+
+    log "Pangolin Update completed."
+fi
+
+# 11. ========== Docker System Prune ==========
 log "Removing unused Docker containers, images, networks, and build cache..."
 docker system prune -a -f || log "Docker System Prune failed."
 
-# 11. ========== Podman System Prune ==========
+# 12. ========== Podman System Prune ==========
 log "Removing unused Podman containers, images, networks, and build cache..."
 podman system prune -a -f || log "Podman System Prune failed."
 
