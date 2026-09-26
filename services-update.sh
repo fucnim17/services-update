@@ -33,11 +33,19 @@ if [[ -z "${LOG_FILE:-}" ]]; then
     exit 1
 fi
 
-if ! LOG_DIR="$(cd "$(dirname "$LOG_FILE")" 2>/dev/null && pwd)"; then
-    echo "Log directory does not exist: $(dirname "$LOG_FILE")"
+# A relative path is resolved against the script directory, not the current
+# working directory, so the log always ends up in the same place - no matter
+# from where the script is started (e.g. by cron)
+if [[ "$LOG_FILE" != /* ]]; then
+    LOG_FILE="$SCRIPT_DIR/${LOG_FILE#./}"
+fi
+
+LOG_DIR="$(dirname "$LOG_FILE")"
+if [[ ! -d "$LOG_DIR" ]] && ! mkdir -p "$LOG_DIR" 2>/dev/null; then
+    echo "Could not create log directory: $LOG_DIR"
     exit 1
 fi
-LOG_FILE="$LOG_DIR/$(basename "$LOG_FILE")"
+LOG_FILE="$(cd "$LOG_DIR" && pwd)/$(basename "$LOG_FILE")"
 
 # Send everything - including the output of the docker/podman commands - to the
 # terminal and to the log file, so a failure reason is recorded as well
@@ -74,6 +82,7 @@ require_compose() {
 # Script start
 print_separator "STARTING SERVICES UPDATE"
 log "Starting Services Update Script..."
+log "Logging to: $LOG_FILE"
 
 # 1. ========== Jellyfin Update ==========
 if [[ "${UPDATE_JELLYFIN:-}" == "true" ]]; then

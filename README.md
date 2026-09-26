@@ -95,7 +95,7 @@ HOMEPAGE_COMPOSE_FILE=""
 
 #-------------------------------------------------------
 
-LOG_FILE="./services-update.log"
+LOG_FILE="services-update.log"
 
 ```
 
