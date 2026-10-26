@@ -82,6 +82,24 @@ run_silent() {
     "$@" >> "$LOG_FILE" 2>&1
 }
 
+# Run a command, capture its output to a variable, write to log, and echo it back.
+# Preserves the original exit code so the caller can check for failures.
+run_and_capture() {
+    local output
+    output=$("$@" 2>&1)
+    local exit_code=$?
+    echo "$output" >> "$LOG_FILE"
+    echo "$output"
+    return $exit_code
+}
+
+# Check whether a pull output indicates that the image was already up to date.
+# Returns 0 if up to date, 1 otherwise.
+_is_up_to_date() {
+    local output="$1"
+    echo "$output" | grep -qiE "already up to date|up to date"
+}
+
 # Log an error message to both destinations and abort the script
 error() {
     log_both "ERROR: $1"
@@ -119,12 +137,18 @@ if [[ "${UPDATE_JELLYFIN:-}" == "true" ]]; then
     run_silent docker compose -f "$JELLYFIN_COMPOSE_FILE" down || error "Failed to stop Jellyfin services!"
 
     log_detail "Pulling latest Jellyfin Docker images..."
-    run_silent docker compose -f "$JELLYFIN_COMPOSE_FILE" pull || error "Jellyfin Docker Compose Pull failed!"
+    pull_output=$(run_and_capture docker compose -f "$JELLYFIN_COMPOSE_FILE" pull) \
+        || error "Jellyfin Docker Compose Pull failed!"
+
+    if _is_up_to_date "$pull_output"; then
+        add_summary "[OK]    Jellyfin         Up to date"
+    else
+        add_summary "[OK]    Jellyfin         Updated"
+    fi
 
     log_detail "Starting Jellyfin services..."
     run_silent docker compose -f "$JELLYFIN_COMPOSE_FILE" up -d || error "Jellyfin Docker Compose Up failed!"
 
-    add_summary "[OK]    Jellyfin         Updated"
     log_detail "Jellyfin Update completed."
 fi
 
@@ -138,12 +162,18 @@ if [[ "${UPDATE_MEMOS:-}" == "true" ]]; then
     run_silent docker compose -f "$MEMOS_COMPOSE_FILE" down || error "Failed to stop Memos services!"
 
     log_detail "Pulling latest Memos Docker images..."
-    run_silent docker compose -f "$MEMOS_COMPOSE_FILE" pull || error "Memos Docker Compose Pull failed!"
+    pull_output=$(run_and_capture docker compose -f "$MEMOS_COMPOSE_FILE" pull) \
+        || error "Memos Docker Compose Pull failed!"
+
+    if _is_up_to_date "$pull_output"; then
+        add_summary "[OK]    Memos            Up to date"
+    else
+        add_summary "[OK]    Memos            Updated"
+    fi
 
     log_detail "Starting Memos services..."
     run_silent docker compose -f "$MEMOS_COMPOSE_FILE" up -d || error "Memos Docker Compose Up failed!"
 
-    add_summary "[OK]    Memos            Updated"
     log_detail "Memos Update completed."
 fi
 
@@ -157,12 +187,18 @@ if [[ "${UPDATE_ADGUARDHOME:-}" == "true" ]]; then
     run_silent docker compose -f "$ADGUARDHOME_COMPOSE_FILE" down || error "Failed to stop Adguard Home services!"
 
     log_detail "Pulling latest Adguard Home Docker images..."
-    run_silent docker compose -f "$ADGUARDHOME_COMPOSE_FILE" pull || error "Adguard Home Docker Compose Pull failed!"
+    pull_output=$(run_and_capture docker compose -f "$ADGUARDHOME_COMPOSE_FILE" pull) \
+        || error "Adguard Home Docker Compose Pull failed!"
+
+    if _is_up_to_date "$pull_output"; then
+        add_summary "[OK]    AdGuard Home     Up to date"
+    else
+        add_summary "[OK]    AdGuard Home     Updated"
+    fi
 
     log_detail "Starting Adguard Home services..."
     run_silent docker compose -f "$ADGUARDHOME_COMPOSE_FILE" up -d || error "Adguard Home Docker Compose Up failed!"
 
-    add_summary "[OK]    AdGuard Home     Updated"
     log_detail "Adguard Home Update completed."
 fi
 
@@ -183,12 +219,18 @@ if [[ "${UPDATE_PAPERLESS:-}" == "true" ]]; then
     run_silent docker compose -f "$PAPERLESS_COMPOSE_FILE" down || error "Failed to stop Paperless services!"
 
     log_detail "Pulling latest Paperless Docker images..."
-    run_silent docker compose -f "$PAPERLESS_COMPOSE_FILE" pull || error "Paperless Docker Compose Pull failed!"
+    pull_output=$(run_and_capture docker compose -f "$PAPERLESS_COMPOSE_FILE" pull) \
+        || error "Paperless Docker Compose Pull failed!"
+
+    if _is_up_to_date "$pull_output"; then
+        add_summary "[OK]    Paperless        Up to date"
+    else
+        add_summary "[OK]    Paperless        Updated"
+    fi
 
     log_detail "Starting Paperless services..."
     run_silent docker compose -f "$PAPERLESS_COMPOSE_FILE" up -d || error "Paperless Docker Compose Up failed!"
 
-    add_summary "[OK]    Paperless        Updated"
     log_detail "Paperless Backup & Update completed."
 fi
 
@@ -200,12 +242,18 @@ if [[ "${UPDATE_PHOTOPRISM:-}" == "true" ]]; then
     run_silent sudo systemctl stop pod-photoprism.service || error "Failed to stop PhotoPrism image!"
 
     log_detail "Pulling latest PhotoPrism images..."
-    run_silent sudo podman pull docker.io/photoprism/photoprism:latest || error "Failed to pull PhotoPrism image!"
+    pull_output=$(run_and_capture sudo podman pull docker.io/photoprism/photoprism:latest) \
+        || error "Failed to pull PhotoPrism image!"
+
+    if _is_up_to_date "$pull_output"; then
+        add_summary "[OK]    PhotoPrism       Up to date"
+    else
+        add_summary "[OK]    PhotoPrism       Updated"
+    fi
 
     log_detail "Starting PhotoPrism service..."
     run_silent sudo systemctl start pod-photoprism.service || error "Failed to start PhotoPrism!"
 
-    add_summary "[OK]    PhotoPrism       Updated"
     log_detail "PhotoPrism Update completed."
 fi
 
@@ -219,12 +267,18 @@ if [[ "${UPDATE_QBITTORRENT:-}" == "true" ]]; then
     run_silent docker compose -f "$QBITTORRENT_COMPOSE_FILE" down || error "Failed to stop qbittorrent services!"
 
     log_detail "Pulling latest qbittorrent Docker images..."
-    run_silent docker compose -f "$QBITTORRENT_COMPOSE_FILE" pull || error "qbittorrent Docker Compose Pull failed!"
+    pull_output=$(run_and_capture docker compose -f "$QBITTORRENT_COMPOSE_FILE" pull) \
+        || error "qbittorrent Docker Compose Pull failed!"
+
+    if _is_up_to_date "$pull_output"; then
+        add_summary "[OK]    qBittorrent      Up to date"
+    else
+        add_summary "[OK]    qBittorrent      Updated"
+    fi
 
     log_detail "Starting qbittorrent services..."
     run_silent docker compose -f "$QBITTORRENT_COMPOSE_FILE" up -d || error "qbittorrent Docker Compose Up failed!"
 
-    add_summary "[OK]    qBittorrent      Updated"
     log_detail "qbittorrent Update completed."
 fi
 
@@ -238,12 +292,18 @@ if [[ "${UPDATE_DOCKPEEK:-}" == "true" ]]; then
     run_silent docker compose -f "$DOCKPEEK_COMPOSE_FILE" down || error "Failed to stop Dockpeek services!"
 
     log_detail "Pulling latest Dockpeek Docker images..."
-    run_silent docker compose -f "$DOCKPEEK_COMPOSE_FILE" pull || error "Dockpeek Docker Compose Pull failed!"
+    pull_output=$(run_and_capture docker compose -f "$DOCKPEEK_COMPOSE_FILE" pull) \
+        || error "Dockpeek Docker Compose Pull failed!"
+
+    if _is_up_to_date "$pull_output"; then
+        add_summary "[OK]    Dockpeek         Up to date"
+    else
+        add_summary "[OK]    Dockpeek         Updated"
+    fi
 
     log_detail "Starting Dockpeek services..."
     run_silent docker compose -f "$DOCKPEEK_COMPOSE_FILE" up -d || error "Dockpeek Docker Compose Up failed!"
 
-    add_summary "[OK]    Dockpeek         Updated"
     log_detail "Dockpeek Update completed."
 fi
 
@@ -257,12 +317,18 @@ if [[ "${UPDATE_OMNITOOLS:-}" == "true" ]]; then
     run_silent docker compose -f "$OMNITOOLS_COMPOSE_FILE" down || error "Failed to stop OmniTools services!"
 
     log_detail "Pulling latest OmniTools Docker images..."
-    run_silent docker compose -f "$OMNITOOLS_COMPOSE_FILE" pull || error "OmniTools Docker Compose Pull failed!"
+    pull_output=$(run_and_capture docker compose -f "$OMNITOOLS_COMPOSE_FILE" pull) \
+        || error "OmniTools Docker Compose Pull failed!"
+
+    if _is_up_to_date "$pull_output"; then
+        add_summary "[OK]    OmniTools        Up to date"
+    else
+        add_summary "[OK]    OmniTools        Updated"
+    fi
 
     log_detail "Starting OmniTools services..."
     run_silent docker compose -f "$OMNITOOLS_COMPOSE_FILE" up -d || error "OmniTools Docker Compose Up failed!"
 
-    add_summary "[OK]    OmniTools        Updated"
     log_detail "OmniTools Update completed."
 fi
 
@@ -276,12 +342,18 @@ if [[ "${UPDATE_HOMEPAGE:-}" == "true" ]]; then
     run_silent docker compose -f "$HOMEPAGE_COMPOSE_FILE" down || error "Failed to stop Homepage services!"
 
     log_detail "Pulling latest Homepage Docker images..."
-    run_silent docker compose -f "$HOMEPAGE_COMPOSE_FILE" pull || error "Homepage Docker Compose Pull failed!"
+    pull_output=$(run_and_capture docker compose -f "$HOMEPAGE_COMPOSE_FILE" pull) \
+        || error "Homepage Docker Compose Pull failed!"
+
+    if _is_up_to_date "$pull_output"; then
+        add_summary "[OK]    Homepage         Up to date"
+    else
+        add_summary "[OK]    Homepage         Updated"
+    fi
 
     log_detail "Starting Homepage services..."
     run_silent docker compose -f "$HOMEPAGE_COMPOSE_FILE" up -d || error "Homepage Docker Compose Up failed!"
 
-    add_summary "[OK]    Homepage         Updated"
     log_detail "Homepage Update completed."
 fi
 
@@ -295,12 +367,18 @@ if [[ "${UPDATE_PANGOLIN:-}" == "true" ]]; then
     run_silent docker compose -f "$PANGOLIN_COMPOSE_FILE" down || error "Failed to stop Pangolin services!"
 
     log_detail "Pulling latest Pangolin Docker images..."
-    run_silent docker compose -f "$PANGOLIN_COMPOSE_FILE" pull || error "Pangolin Docker Compose Pull failed!"
+    pull_output=$(run_and_capture docker compose -f "$PANGOLIN_COMPOSE_FILE" pull) \
+        || error "Pangolin Docker Compose Pull failed!"
+
+    if _is_up_to_date "$pull_output"; then
+        add_summary "[OK]    Pangolin         Up to date"
+    else
+        add_summary "[OK]    Pangolin         Updated"
+    fi
 
     log_detail "Starting Pangolin services..."
     run_silent docker compose -f "$PANGOLIN_COMPOSE_FILE" up -d || error "Pangolin Docker Compose Up failed!"
 
-    add_summary "[OK]    Pangolin         Updated"
     log_detail "Pangolin Update completed."
 fi
 
@@ -314,12 +392,18 @@ if [[ "${UPDATE_OPENWEBUI:-}" == "true" ]]; then
     run_silent docker compose -f "$OPENWEBUI_COMPOSE_FILE" down || error "Failed to stop OpenWebUI services!"
 
     log_detail "Pulling latest OpenWebUI Docker images..."
-    run_silent docker compose -f "$OPENWEBUI_COMPOSE_FILE" pull || error "OpenWebUI Docker Compose Pull failed!"
+    pull_output=$(run_and_capture docker compose -f "$OPENWEBUI_COMPOSE_FILE" pull) \
+        || error "OpenWebUI Docker Compose Pull failed!"
+
+    if _is_up_to_date "$pull_output"; then
+        add_summary "[OK]    OpenWebUI        Up to date"
+    else
+        add_summary "[OK]    OpenWebUI        Updated"
+    fi
 
     log_detail "Starting OpenWebUI services..."
     run_silent docker compose -f "$OPENWEBUI_COMPOSE_FILE" up -d || error "OpenWebUI Docker Compose Up failed!"
 
-    add_summary "[OK]    OpenWebUI        Updated"
     log_detail "OpenWebUI Update completed."
 fi
 
