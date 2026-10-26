@@ -166,9 +166,10 @@ trap 'error "Unexpected error at line ${LINENO:-?}"' ERR
 # On exit, always emit the summary (so we see partial results even on failure).
 trap '{
     if [[ -n "${SUMMARY:-}" ]]; then
-        printf "\nServices Update Summary - %s\n" "$DATE"
-        printf "%s" "$SUMMARY"
-        printf "---\n"
+        echo ""
+        echo "Services Update Summary - $DATE"
+        echo -n "$SUMMARY"
+        echo "---"
     fi
 } | tee -a "$LOG_FILE"' EXIT
 
