@@ -12,7 +12,6 @@ This script automates the maintenance of multiple services running in Docker and
 8. **Dockpeek**
 9. **OmniTools**
 10. **Pangolin**
-11. **OpenWebUI**
 
 It simplifies maintenance by pulling the latest images, restarting containers, and performing routine tasks to ensure your services are always up-to-date and backed up.
 
@@ -100,12 +99,6 @@ HOMEPAGE_COMPOSE_FILE=""
 
 UPDATE_PANGOLIN=false
 PANGOLIN_COMPOSE_FILE=""
-
-#-------------------------------------------------------
-##################### - OpenWebUI - #####################
-
-UPDATE_OPENWEBUI=false
-OPENWEBUI_COMPOSE_FILE=""
 
 #-------------------------------------------------------
 
