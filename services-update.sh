@@ -106,8 +106,11 @@ _was_updated() {
     local output="$1"
     # Docker Compose indicators
     echo "$output" | grep -qiE "downloaded newer image|pull complete" && return 0
-    # Podman indicators (actually pulled new image)
-    echo "$output" | grep -qiE "storing signatures|writing manifest" && return 0
+    # Podman indicators
+    echo "$output" | grep -qiF "already up to date" && return 1
+    if echo "$output" | grep -q "Copying blob"; then
+        echo "$output" | grep "Copying blob" | grep -v "skipped" | grep -q "." && return 0
+    fi
     return 1
 }
 
