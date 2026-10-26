@@ -93,11 +93,11 @@ run_and_capture() {
     return $exit_code
 }
 
-# Check whether a pull output indicates that the image was already up to date.
-# Returns 0 if up to date, 1 otherwise.
-_is_up_to_date() {
+# Check whether a pull output indicates that a new image was actually downloaded.
+# Returns 0 if something was updated/pulled, 1 if everything was already up to date.
+_was_updated() {
     local output="$1"
-    echo "$output" | grep -qiE "already up to date|up to date"
+    echo "$output" | grep -qiE "downloaded newer image|pull complete"
 }
 
 # Log an error message to both destinations and abort the script
@@ -140,10 +140,10 @@ if [[ "${UPDATE_JELLYFIN:-}" == "true" ]]; then
     pull_output=$(run_and_capture docker compose -f "$JELLYFIN_COMPOSE_FILE" pull) \
         || error "Jellyfin Docker Compose Pull failed!"
 
-    if _is_up_to_date "$pull_output"; then
-        add_summary "[OK]    Jellyfin         Up to date"
+    if _was_updated "$pull_output"; then
+        add_summary "[OK] Jellyfin: Updated"
     else
-        add_summary "[OK]    Jellyfin         Updated"
+        add_summary "[OK] Jellyfin: Up to date"
     fi
 
     log_detail "Starting Jellyfin services..."
@@ -165,10 +165,10 @@ if [[ "${UPDATE_MEMOS:-}" == "true" ]]; then
     pull_output=$(run_and_capture docker compose -f "$MEMOS_COMPOSE_FILE" pull) \
         || error "Memos Docker Compose Pull failed!"
 
-    if _is_up_to_date "$pull_output"; then
-        add_summary "[OK]    Memos            Up to date"
+    if _was_updated "$pull_output"; then
+        add_summary "[OK] Memos: Updated"
     else
-        add_summary "[OK]    Memos            Updated"
+        add_summary "[OK] Memos: Up to date"
     fi
 
     log_detail "Starting Memos services..."
@@ -190,10 +190,10 @@ if [[ "${UPDATE_ADGUARDHOME:-}" == "true" ]]; then
     pull_output=$(run_and_capture docker compose -f "$ADGUARDHOME_COMPOSE_FILE" pull) \
         || error "Adguard Home Docker Compose Pull failed!"
 
-    if _is_up_to_date "$pull_output"; then
-        add_summary "[OK]    AdGuard Home     Up to date"
+    if _was_updated "$pull_output"; then
+        add_summary "[OK] AdGuard Home: Updated"
     else
-        add_summary "[OK]    AdGuard Home     Updated"
+        add_summary "[OK] AdGuard Home: Up to date"
     fi
 
     log_detail "Starting Adguard Home services..."
@@ -222,10 +222,10 @@ if [[ "${UPDATE_PAPERLESS:-}" == "true" ]]; then
     pull_output=$(run_and_capture docker compose -f "$PAPERLESS_COMPOSE_FILE" pull) \
         || error "Paperless Docker Compose Pull failed!"
 
-    if _is_up_to_date "$pull_output"; then
-        add_summary "[OK]    Paperless        Up to date"
+    if _was_updated "$pull_output"; then
+        add_summary "[OK] Paperless: Updated"
     else
-        add_summary "[OK]    Paperless        Updated"
+        add_summary "[OK] Paperless: Up to date"
     fi
 
     log_detail "Starting Paperless services..."
@@ -245,10 +245,10 @@ if [[ "${UPDATE_PHOTOPRISM:-}" == "true" ]]; then
     pull_output=$(run_and_capture sudo podman pull docker.io/photoprism/photoprism:latest) \
         || error "Failed to pull PhotoPrism image!"
 
-    if _is_up_to_date "$pull_output"; then
-        add_summary "[OK]    PhotoPrism       Up to date"
+    if _was_updated "$pull_output"; then
+        add_summary "[OK] PhotoPrism: Updated"
     else
-        add_summary "[OK]    PhotoPrism       Updated"
+        add_summary "[OK] PhotoPrism: Up to date"
     fi
 
     log_detail "Starting PhotoPrism service..."
@@ -270,10 +270,10 @@ if [[ "${UPDATE_QBITTORRENT:-}" == "true" ]]; then
     pull_output=$(run_and_capture docker compose -f "$QBITTORRENT_COMPOSE_FILE" pull) \
         || error "qbittorrent Docker Compose Pull failed!"
 
-    if _is_up_to_date "$pull_output"; then
-        add_summary "[OK]    qBittorrent      Up to date"
+    if _was_updated "$pull_output"; then
+        add_summary "[OK] qBittorrent: Updated"
     else
-        add_summary "[OK]    qBittorrent      Updated"
+        add_summary "[OK] qBittorrent: Up to date"
     fi
 
     log_detail "Starting qbittorrent services..."
@@ -295,10 +295,10 @@ if [[ "${UPDATE_DOCKPEEK:-}" == "true" ]]; then
     pull_output=$(run_and_capture docker compose -f "$DOCKPEEK_COMPOSE_FILE" pull) \
         || error "Dockpeek Docker Compose Pull failed!"
 
-    if _is_up_to_date "$pull_output"; then
-        add_summary "[OK]    Dockpeek         Up to date"
+    if _was_updated "$pull_output"; then
+        add_summary "[OK] Dockpeek: Updated"
     else
-        add_summary "[OK]    Dockpeek         Updated"
+        add_summary "[OK] Dockpeek: Up to date"
     fi
 
     log_detail "Starting Dockpeek services..."
@@ -320,10 +320,10 @@ if [[ "${UPDATE_OMNITOOLS:-}" == "true" ]]; then
     pull_output=$(run_and_capture docker compose -f "$OMNITOOLS_COMPOSE_FILE" pull) \
         || error "OmniTools Docker Compose Pull failed!"
 
-    if _is_up_to_date "$pull_output"; then
-        add_summary "[OK]    OmniTools        Up to date"
+    if _was_updated "$pull_output"; then
+        add_summary "[OK] OmniTools: Updated"
     else
-        add_summary "[OK]    OmniTools        Updated"
+        add_summary "[OK] OmniTools: Up to date"
     fi
 
     log_detail "Starting OmniTools services..."
@@ -345,10 +345,10 @@ if [[ "${UPDATE_HOMEPAGE:-}" == "true" ]]; then
     pull_output=$(run_and_capture docker compose -f "$HOMEPAGE_COMPOSE_FILE" pull) \
         || error "Homepage Docker Compose Pull failed!"
 
-    if _is_up_to_date "$pull_output"; then
-        add_summary "[OK]    Homepage         Up to date"
+    if _was_updated "$pull_output"; then
+        add_summary "[OK] Homepage: Updated"
     else
-        add_summary "[OK]    Homepage         Updated"
+        add_summary "[OK] Homepage: Up to date"
     fi
 
     log_detail "Starting Homepage services..."
@@ -370,10 +370,10 @@ if [[ "${UPDATE_PANGOLIN:-}" == "true" ]]; then
     pull_output=$(run_and_capture docker compose -f "$PANGOLIN_COMPOSE_FILE" pull) \
         || error "Pangolin Docker Compose Pull failed!"
 
-    if _is_up_to_date "$pull_output"; then
-        add_summary "[OK]    Pangolin         Up to date"
+    if _was_updated "$pull_output"; then
+        add_summary "[OK] Pangolin: Updated"
     else
-        add_summary "[OK]    Pangolin         Updated"
+        add_summary "[OK] Pangolin: Up to date"
     fi
 
     log_detail "Starting Pangolin services..."
@@ -395,10 +395,10 @@ if [[ "${UPDATE_OPENWEBUI:-}" == "true" ]]; then
     pull_output=$(run_and_capture docker compose -f "$OPENWEBUI_COMPOSE_FILE" pull) \
         || error "OpenWebUI Docker Compose Pull failed!"
 
-    if _is_up_to_date "$pull_output"; then
-        add_summary "[OK]    OpenWebUI        Up to date"
+    if _was_updated "$pull_output"; then
+        add_summary "[OK] OpenWebUI: Updated"
     else
-        add_summary "[OK]    OpenWebUI        Updated"
+        add_summary "[OK] OpenWebUI: Up to date"
     fi
 
     log_detail "Starting OpenWebUI services..."
@@ -416,10 +416,10 @@ docker_prune_exit=$?
 echo "$docker_prune_output" >> "$LOG_FILE"
 
 if [[ $docker_prune_exit -eq 0 ]]; then
-    docker_reclaimed=$(echo "$docker_prune_output" | grep -i "total reclaimed space" || echo "Total reclaimed space: N/A")
-    add_summary "[OK]    Docker Prune     ${docker_reclaimed}"
+    docker_reclaimed=$(echo "$docker_prune_output" | grep -i "total reclaimed space" | sed 's/.*Total reclaimed space: *//i' || echo "N/A")
+    add_summary "[OK] Docker Prune: ${docker_reclaimed} reclaimed"
 else
-    add_summary "[FAIL]  Docker Prune     Failed (see log)"
+    add_summary "[FAIL] Docker Prune: Failed (see log)"
 fi
 
 # ---------------------------------------------------------------------------
@@ -431,10 +431,10 @@ podman_prune_exit=$?
 echo "$podman_prune_output" >> "$LOG_FILE"
 
 if [[ $podman_prune_exit -eq 0 ]]; then
-    podman_reclaimed=$(echo "$podman_prune_output" | grep -i "total reclaimed space" || echo "Total reclaimed space: N/A")
-    add_summary "[OK]    Podman Prune     ${podman_reclaimed}"
+    podman_reclaimed=$(echo "$podman_prune_output" | grep -i "total reclaimed space" | sed 's/.*Total reclaimed space: *//i' || echo "N/A")
+    add_summary "[OK] Podman Prune: ${podman_reclaimed} reclaimed"
 else
-    add_summary "[FAIL]  Podman Prune     Failed (see log)"
+    add_summary "[FAIL] Podman Prune: Failed (see log)"
 fi
 
 # ---------------------------------------------------------------------------
