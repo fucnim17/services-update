@@ -47,259 +47,322 @@ if [[ ! -d "$LOG_DIR" ]] && ! mkdir -p "$LOG_DIR" 2>/dev/null; then
 fi
 LOG_FILE="$(cd "$LOG_DIR" && pwd)/$(basename "$LOG_FILE")"
 
-# Send everything - including the output of the docker/podman commands - to the
-# terminal and to the log file, so a failure reason is recorded as well
-exec > >(tee -a "$LOG_FILE") 2>&1
+# Accumulator for the final summary report (sent via stdout / email)
+SUMMARY=""
 
-# Function to print a separator line with date
-print_separator() {
+# ---------------------------------------------------------------------------
+# Helper Functions
+# ---------------------------------------------------------------------------
+
+# Print a separator with date to the log file only
+print_separator_log() {
     local message="${1:-}"
-    echo "============================================================"
-    echo "==== ${DATE} - ${message} ===="
-    echo "============================================================"
+    {
+        echo "============================================================"
+        echo "==== ${DATE} - ${message} ===="
+        echo "============================================================"
+    } >> "$LOG_FILE"
 }
 
-# Function to log messages with a timestamp
-log() {
-    echo "[$(date +%Y-%m-%d_%H-%M-%S)] $1"
+# Write a timestamped message to the log file only (detailed operation logs)
+log_detail() {
+    echo "[$(date +%Y-%m-%d_%H-%M-%S)] $1" >> "$LOG_FILE"
 }
 
-# Function to log errors and exit the script
+# Write a timestamped message to stdout (email) AND the log file
+log_both() {
+    local msg="[$(date +%Y-%m-%d_%H-%M-%S)] $1"
+    echo "$msg"
+    echo "$msg" >> "$LOG_FILE"
+}
+
+# Run a command redirecting all output to the log file.
+# Preserves the original exit code so failures can still be caught.
+run_silent() {
+    "$@" >> "$LOG_FILE" 2>&1
+}
+
+# Log an error message to both destinations and abort the script
 error() {
-    log "ERROR: $1"
-    print_separator "SCRIPT FAILED"
-    echo ""
+    log_both "ERROR: $1"
+    print_separator_log "SCRIPT FAILED"
     exit 1
 }
 
-# Function to verify that an enabled service is configured correctly
+# Verify that an enabled service is configured correctly
 require_compose() {
     local name="$1" file="${2:-}"
     [[ -n "$file" ]] || error "$name is enabled but its compose file path is not set!"
     [[ -f "$file" ]] || error "$name compose file not found: $file"
 }
 
-# Script start
-print_separator "STARTING SERVICES UPDATE"
-log "Starting Services Update Script..."
-log "Logging to: $LOG_FILE"
+# Append a line to the summary accumulator
+add_summary() {
+    SUMMARY+="$1"$'\n'
+}
 
+# ---------------------------------------------------------------------------
+# Script Start
+# ---------------------------------------------------------------------------
+
+print_separator_log "STARTING SERVICES UPDATE"
+log_detail "Starting Services Update Script..."
+log_detail "Logging to: $LOG_FILE"
+
+# ---------------------------------------------------------------------------
 # 1. ========== Jellyfin Update ==========
+# ---------------------------------------------------------------------------
 if [[ "${UPDATE_JELLYFIN:-}" == "true" ]]; then
-
     require_compose "Jellyfin" "${JELLYFIN_COMPOSE_FILE:-}"
 
-    # 1.1 Docker Compose Down
-    log "Stopping Jellyfin services..."
-    docker compose -f "$JELLYFIN_COMPOSE_FILE" down || error "Failed to stop Jellyfin services!"
+    log_detail "Stopping Jellyfin services..."
+    run_silent docker compose -f "$JELLYFIN_COMPOSE_FILE" down || error "Failed to stop Jellyfin services!"
 
-    # 1.2 Docker Compose Pull
-    log "Pulling latest Jellyfin Docker Images..."
-    docker compose -f "$JELLYFIN_COMPOSE_FILE" pull || error "Jellyfin Docker Compose Pull failed!"
+    log_detail "Pulling latest Jellyfin Docker images..."
+    run_silent docker compose -f "$JELLYFIN_COMPOSE_FILE" pull || error "Jellyfin Docker Compose Pull failed!"
 
-    # 1.3 Docker Compose Up
-    log "Starting Jellyfin services..."
-    docker compose -f "$JELLYFIN_COMPOSE_FILE" up -d || error "Jellyfin Docker Compose Up failed!"
+    log_detail "Starting Jellyfin services..."
+    run_silent docker compose -f "$JELLYFIN_COMPOSE_FILE" up -d || error "Jellyfin Docker Compose Up failed!"
 
-    log "Jellyfin Update completed."
+    add_summary "[OK]    Jellyfin         Updated"
+    log_detail "Jellyfin Update completed."
 fi
 
+# ---------------------------------------------------------------------------
 # 2. ========== Memos Update ==========
+# ---------------------------------------------------------------------------
 if [[ "${UPDATE_MEMOS:-}" == "true" ]]; then
-
     require_compose "Memos" "${MEMOS_COMPOSE_FILE:-}"
 
-    # 2.1 Docker Compose Down
-    log "Stopping Memos services..."
-    docker compose -f "$MEMOS_COMPOSE_FILE" down || error "Failed to stop Memos services!"
+    log_detail "Stopping Memos services..."
+    run_silent docker compose -f "$MEMOS_COMPOSE_FILE" down || error "Failed to stop Memos services!"
 
-    # 2.2 Docker Compose Pull
-    log "Pulling latest Memos Docker Images..."
-    docker compose -f "$MEMOS_COMPOSE_FILE" pull || error "Memos Docker Compose Pull failed!"
+    log_detail "Pulling latest Memos Docker images..."
+    run_silent docker compose -f "$MEMOS_COMPOSE_FILE" pull || error "Memos Docker Compose Pull failed!"
 
-    # 2.3 Docker Compose Up
-    log "Starting Memos Docker Compose..."
-    docker compose -f "$MEMOS_COMPOSE_FILE" up -d || error "Memos Docker Compose Up failed!"
+    log_detail "Starting Memos services..."
+    run_silent docker compose -f "$MEMOS_COMPOSE_FILE" up -d || error "Memos Docker Compose Up failed!"
 
-    log "Memos Update completed."
+    add_summary "[OK]    Memos            Updated"
+    log_detail "Memos Update completed."
 fi
 
+# ---------------------------------------------------------------------------
 # 3. ========== Adguard Home Update ==========
+# ---------------------------------------------------------------------------
 if [[ "${UPDATE_ADGUARDHOME:-}" == "true" ]]; then
-
     require_compose "Adguard Home" "${ADGUARDHOME_COMPOSE_FILE:-}"
 
-    # 3.1 Docker Compose Down
-    log "Stopping Adguard Home services..."
-    docker compose -f "$ADGUARDHOME_COMPOSE_FILE" down || error "Failed to stop Adguard Home services!"
+    log_detail "Stopping Adguard Home services..."
+    run_silent docker compose -f "$ADGUARDHOME_COMPOSE_FILE" down || error "Failed to stop Adguard Home services!"
 
-    # 3.2 Docker Compose Pull
-    log "Pulling latest Adguard Home Docker Images..."
-    docker compose -f "$ADGUARDHOME_COMPOSE_FILE" pull || error "Adguard Home Docker Compose Pull failed!"
+    log_detail "Pulling latest Adguard Home Docker images..."
+    run_silent docker compose -f "$ADGUARDHOME_COMPOSE_FILE" pull || error "Adguard Home Docker Compose Pull failed!"
 
-    # 3.3 Docker Compose Up
-    log "Starting Adguard Home services..."
-    docker compose -f "$ADGUARDHOME_COMPOSE_FILE" up -d || error "Adguard Home Docker Compose Up failed!"
+    log_detail "Starting Adguard Home services..."
+    run_silent docker compose -f "$ADGUARDHOME_COMPOSE_FILE" up -d || error "Adguard Home Docker Compose Up failed!"
 
-    log "Adguard Home Update completed."
+    add_summary "[OK]    AdGuard Home     Updated"
+    log_detail "Adguard Home Update completed."
 fi
 
+# ---------------------------------------------------------------------------
 # 4. ========== Paperless Backup & Update ==========
+# ---------------------------------------------------------------------------
 if [[ "${UPDATE_PAPERLESS:-}" == "true" ]]; then
-
     require_compose "Paperless" "${PAPERLESS_COMPOSE_FILE:-}"
     [[ -n "${PAPERLESS_DIRECTORY:-}" ]] || error "Paperless is enabled but PAPERLESS_DIRECTORY is not set!"
     [[ -d "$PAPERLESS_DIRECTORY" ]] || error "Paperless directory not found: $PAPERLESS_DIRECTORY"
 
-    # 4.1 Execute Backup
-    log "Starting Paperless Backup..."
+    log_detail "Starting Paperless Backup..."
     cd "$PAPERLESS_DIRECTORY" || error "Could not change to Paperless directory!"
-    docker compose exec -T webserver document_exporter ../export -z -d --no-progress-bar || error "Paperless document export failed!"
-    cd "$ORIGINAL_DIR"  || error "Could not change back to home directory!"
+    run_silent docker compose exec -T webserver document_exporter ../export -z -d --no-progress-bar || error "Paperless document export failed!"
+    cd "$ORIGINAL_DIR" || error "Could not change back to home directory!"
 
-    # 4.2 Docker Compose Down
-    log "Stopping Paperless services..."
-    docker compose -f "$PAPERLESS_COMPOSE_FILE" down || error "Failed to stop Paperless services!"
+    log_detail "Stopping Paperless services..."
+    run_silent docker compose -f "$PAPERLESS_COMPOSE_FILE" down || error "Failed to stop Paperless services!"
 
-    # 4.3 Docker Compose Pull
-    log "Pulling latest Paperless Docker images..."
-    docker compose -f "$PAPERLESS_COMPOSE_FILE" pull || error "Paperless Docker Compose Pull failed!"
+    log_detail "Pulling latest Paperless Docker images..."
+    run_silent docker compose -f "$PAPERLESS_COMPOSE_FILE" pull || error "Paperless Docker Compose Pull failed!"
 
-    # 4.4 Docker Compose Up
-    log "Starting Paperless services..."
-    docker compose -f "$PAPERLESS_COMPOSE_FILE" up -d || error "Paperless Docker Compose Up failed!"
+    log_detail "Starting Paperless services..."
+    run_silent docker compose -f "$PAPERLESS_COMPOSE_FILE" up -d || error "Paperless Docker Compose Up failed!"
 
-    log "Paperless Backup & Update completed."
+    add_summary "[OK]    Paperless        Updated"
+    log_detail "Paperless Backup & Update completed."
 fi
 
+# ---------------------------------------------------------------------------
 # 5. ========== PhotoPrism Update ==========
+# ---------------------------------------------------------------------------
 if [[ "${UPDATE_PHOTOPRISM:-}" == "true" ]]; then
+    log_detail "Stopping PhotoPrism service..."
+    run_silent sudo systemctl stop pod-photoprism.service || error "Failed to stop PhotoPrism image!"
 
-    # 5.1 Stop service
-    log "Stopping PhotoPrism service..."
-    sudo systemctl stop pod-photoprism.service || error "Failed to stop PhotoPrism image!"
+    log_detail "Pulling latest PhotoPrism images..."
+    run_silent sudo podman pull docker.io/photoprism/photoprism:latest || error "Failed to pull PhotoPrism image!"
 
-    # 5.2 Pull latest images
-    log "Pulling latest PhotoPrism images..."
-    sudo podman pull docker.io/photoprism/photoprism:latest || error "Failed to pull PhotoPrism image!"
+    log_detail "Starting PhotoPrism service..."
+    run_silent sudo systemctl start pod-photoprism.service || error "Failed to start PhotoPrism!"
 
-    # 5.3 Start service
-    log "Starting PhotoPrism service..."
-    sudo systemctl start pod-photoprism.service || error "Failed to start PhotoPrism!"
-
-    log "PhotoPrism Update completed."
+    add_summary "[OK]    PhotoPrism       Updated"
+    log_detail "PhotoPrism Update completed."
 fi
 
+# ---------------------------------------------------------------------------
 # 6. ========== qbittorrent Update ==========
+# ---------------------------------------------------------------------------
 if [[ "${UPDATE_QBITTORRENT:-}" == "true" ]]; then
-
     require_compose "qbittorrent" "${QBITTORRENT_COMPOSE_FILE:-}"
 
-    # 6.1 Docker Compose Down
-    log "Stopping qbittorrent services..."
-    docker compose -f "$QBITTORRENT_COMPOSE_FILE" down || error "Failed to stop qbittorrent services!"
+    log_detail "Stopping qbittorrent services..."
+    run_silent docker compose -f "$QBITTORRENT_COMPOSE_FILE" down || error "Failed to stop qbittorrent services!"
 
-    # 6.2 Docker Compose Pull
-    log "Pulling latest qbittorrent Docker Images..."
-    docker compose -f "$QBITTORRENT_COMPOSE_FILE" pull || error "qbittorrent Docker Compose Pull failed!"
+    log_detail "Pulling latest qbittorrent Docker images..."
+    run_silent docker compose -f "$QBITTORRENT_COMPOSE_FILE" pull || error "qbittorrent Docker Compose Pull failed!"
 
-    # 6.3 Docker Compose Up
-    log "Starting qbittorrent services..."
-    docker compose -f "$QBITTORRENT_COMPOSE_FILE" up -d || error "qbittorrent Docker Compose Up failed!"
+    log_detail "Starting qbittorrent services..."
+    run_silent docker compose -f "$QBITTORRENT_COMPOSE_FILE" up -d || error "qbittorrent Docker Compose Up failed!"
 
-    log "qbittorrent Update completed."
+    add_summary "[OK]    qBittorrent      Updated"
+    log_detail "qbittorrent Update completed."
 fi
 
+# ---------------------------------------------------------------------------
 # 7. ========== Dockpeek Update ==========
+# ---------------------------------------------------------------------------
 if [[ "${UPDATE_DOCKPEEK:-}" == "true" ]]; then
-
     require_compose "Dockpeek" "${DOCKPEEK_COMPOSE_FILE:-}"
 
-    # 7.1 Docker Compose Down
-    log "Stopping Dockpeek services..."
-    docker compose -f "$DOCKPEEK_COMPOSE_FILE" down || error "Failed to stop Dockpeek services!"
+    log_detail "Stopping Dockpeek services..."
+    run_silent docker compose -f "$DOCKPEEK_COMPOSE_FILE" down || error "Failed to stop Dockpeek services!"
 
-    # 7.2 Docker Compose Pull
-    log "Pulling latest Dockpeek Docker Images..."
-    docker compose -f "$DOCKPEEK_COMPOSE_FILE" pull || error "Dockpeek Docker Compose Pull failed!"
+    log_detail "Pulling latest Dockpeek Docker images..."
+    run_silent docker compose -f "$DOCKPEEK_COMPOSE_FILE" pull || error "Dockpeek Docker Compose Pull failed!"
 
-    # 7.3 Docker Compose Up
-    log "Starting Dockpeek services..."
-    docker compose -f "$DOCKPEEK_COMPOSE_FILE" up -d || error "Dockpeek Docker Compose Up failed!"
+    log_detail "Starting Dockpeek services..."
+    run_silent docker compose -f "$DOCKPEEK_COMPOSE_FILE" up -d || error "Dockpeek Docker Compose Up failed!"
 
-    log "Dockpeek Update completed."
+    add_summary "[OK]    Dockpeek         Updated"
+    log_detail "Dockpeek Update completed."
 fi
 
+# ---------------------------------------------------------------------------
 # 8. ========== OmniTools Update ==========
+# ---------------------------------------------------------------------------
 if [[ "${UPDATE_OMNITOOLS:-}" == "true" ]]; then
-
     require_compose "OmniTools" "${OMNITOOLS_COMPOSE_FILE:-}"
 
-    # 8.1 Docker Compose Down
-    log "Stopping OmniTools services..."
-    docker compose -f "$OMNITOOLS_COMPOSE_FILE" down || error "Failed to stop OmniTools services!"
+    log_detail "Stopping OmniTools services..."
+    run_silent docker compose -f "$OMNITOOLS_COMPOSE_FILE" down || error "Failed to stop OmniTools services!"
 
-    # 8.2 Docker Compose Pull
-    log "Pulling latest OmniTools Docker Images..."
-    docker compose -f "$OMNITOOLS_COMPOSE_FILE" pull || error "OmniTools Docker Compose Pull failed!"
+    log_detail "Pulling latest OmniTools Docker images..."
+    run_silent docker compose -f "$OMNITOOLS_COMPOSE_FILE" pull || error "OmniTools Docker Compose Pull failed!"
 
-    # 8.3 Docker Compose Up
-    log "Starting OmniTools services..."
-    docker compose -f "$OMNITOOLS_COMPOSE_FILE" up -d || error "OmniTools Docker Compose Up failed!"
+    log_detail "Starting OmniTools services..."
+    run_silent docker compose -f "$OMNITOOLS_COMPOSE_FILE" up -d || error "OmniTools Docker Compose Up failed!"
 
-    log "OmniTools Update completed."
+    add_summary "[OK]    OmniTools        Updated"
+    log_detail "OmniTools Update completed."
 fi
 
+# ---------------------------------------------------------------------------
 # 9. ========== Homepage Update ==========
+# ---------------------------------------------------------------------------
 if [[ "${UPDATE_HOMEPAGE:-}" == "true" ]]; then
-
     require_compose "Homepage" "${HOMEPAGE_COMPOSE_FILE:-}"
 
-    # 9.1 Docker Compose Down
-    log "Stopping Homepage services..."
-    docker compose -f "$HOMEPAGE_COMPOSE_FILE" down || error "Failed to stop Homepage services!"
+    log_detail "Stopping Homepage services..."
+    run_silent docker compose -f "$HOMEPAGE_COMPOSE_FILE" down || error "Failed to stop Homepage services!"
 
-    # 9.2 Docker Compose Pull
-    log "Pulling latest Homepage Docker Images..."
-    docker compose -f "$HOMEPAGE_COMPOSE_FILE" pull || error "Homepage Docker Compose Pull failed!"
+    log_detail "Pulling latest Homepage Docker images..."
+    run_silent docker compose -f "$HOMEPAGE_COMPOSE_FILE" pull || error "Homepage Docker Compose Pull failed!"
 
-    # 9.3 Docker Compose Up
-    log "Starting Homepage services..."
-    docker compose -f "$HOMEPAGE_COMPOSE_FILE" up -d || error "Homepage Docker Compose Up failed!"
+    log_detail "Starting Homepage services..."
+    run_silent docker compose -f "$HOMEPAGE_COMPOSE_FILE" up -d || error "Homepage Docker Compose Up failed!"
 
-    log "Homepage Update completed."
+    add_summary "[OK]    Homepage         Updated"
+    log_detail "Homepage Update completed."
 fi
 
+# ---------------------------------------------------------------------------
 # 10. ========== Pangolin Update ==========
+# ---------------------------------------------------------------------------
 if [[ "${UPDATE_PANGOLIN:-}" == "true" ]]; then
-
     require_compose "Pangolin" "${PANGOLIN_COMPOSE_FILE:-}"
 
-    # 10.1 Docker Compose Down
-    log "Stopping Pangolin services..."
-    docker compose -f "$PANGOLIN_COMPOSE_FILE" down || error "Failed to stop Pangolin services!"
+    log_detail "Stopping Pangolin services..."
+    run_silent docker compose -f "$PANGOLIN_COMPOSE_FILE" down || error "Failed to stop Pangolin services!"
 
-    # 10.2 Docker Compose Pull
-    log "Pulling latest Pangolin Docker Images..."
-    docker compose -f "$PANGOLIN_COMPOSE_FILE" pull || error "Pangolin Docker Compose Pull failed!"
+    log_detail "Pulling latest Pangolin Docker images..."
+    run_silent docker compose -f "$PANGOLIN_COMPOSE_FILE" pull || error "Pangolin Docker Compose Pull failed!"
 
-    # 10.3 Docker Compose Up
-    log "Starting Pangolin services..."
-    docker compose -f "$PANGOLIN_COMPOSE_FILE" up -d || error "Pangolin Docker Compose Up failed!"
+    log_detail "Starting Pangolin services..."
+    run_silent docker compose -f "$PANGOLIN_COMPOSE_FILE" up -d || error "Pangolin Docker Compose Up failed!"
 
-    log "Pangolin Update completed."
+    add_summary "[OK]    Pangolin         Updated"
+    log_detail "Pangolin Update completed."
 fi
 
-# 11. ========== Docker System Prune ==========
-log "Removing unused Docker containers, images, networks, and build cache..."
-docker system prune -a -f || log "Docker System Prune failed."
+# ---------------------------------------------------------------------------
+# 11. ========== OpenWebUI Update ==========
+# ---------------------------------------------------------------------------
+if [[ "${UPDATE_OPENWEBUI:-}" == "true" ]]; then
+    require_compose "OpenWebUI" "${OPENWEBUI_COMPOSE_FILE:-}"
 
-# 12. ========== Podman System Prune ==========
-log "Removing unused Podman containers, images, networks, and build cache..."
-podman system prune -a -f || log "Podman System Prune failed."
+    log_detail "Stopping OpenWebUI services..."
+    run_silent docker compose -f "$OPENWEBUI_COMPOSE_FILE" down || error "Failed to stop OpenWebUI services!"
 
-# Script end
-log "All selected services update completed."
-print_separator "SERVICES UPDATE COMPLETED SUCCESSFULLY"
-echo ""
+    log_detail "Pulling latest OpenWebUI Docker images..."
+    run_silent docker compose -f "$OPENWEBUI_COMPOSE_FILE" pull || error "OpenWebUI Docker Compose Pull failed!"
+
+    log_detail "Starting OpenWebUI services..."
+    run_silent docker compose -f "$OPENWEBUI_COMPOSE_FILE" up -d || error "OpenWebUI Docker Compose Up failed!"
+
+    add_summary "[OK]    OpenWebUI        Updated"
+    log_detail "OpenWebUI Update completed."
+fi
+
+# ---------------------------------------------------------------------------
+# 12. ========== Docker System Prune ==========
+# ---------------------------------------------------------------------------
+log_detail "Removing unused Docker containers, images, networks, and build cache..."
+docker_prune_output=$(docker system prune -a -f 2>&1)
+docker_prune_exit=$?
+echo "$docker_prune_output" >> "$LOG_FILE"
+
+if [[ $docker_prune_exit -eq 0 ]]; then
+    docker_reclaimed=$(echo "$docker_prune_output" | grep -i "total reclaimed space" || echo "Total reclaimed space: N/A")
+    add_summary "[OK]    Docker Prune     ${docker_reclaimed}"
+else
+    add_summary "[FAIL]  Docker Prune     Failed (see log)"
+fi
+
+# ---------------------------------------------------------------------------
+# 13. ========== Podman System Prune ==========
+# ---------------------------------------------------------------------------
+log_detail "Removing unused Podman containers, images, networks, and build cache..."
+podman_prune_output=$(podman system prune -a -f 2>&1)
+podman_prune_exit=$?
+echo "$podman_prune_output" >> "$LOG_FILE"
+
+if [[ $podman_prune_exit -eq 0 ]]; then
+    podman_reclaimed=$(echo "$podman_prune_output" | grep -i "total reclaimed space" || echo "Total reclaimed space: N/A")
+    add_summary "[OK]    Podman Prune     ${podman_reclaimed}"
+else
+    add_summary "[FAIL]  Podman Prune     Failed (see log)"
+fi
+
+# ---------------------------------------------------------------------------
+# Summary Report (stdout -> email, also appended to log)
+# ---------------------------------------------------------------------------
+{
+    echo ""
+    echo "============================================================"
+    echo "==== ${DATE} - SERVICES UPDATE SUMMARY ===="
+    echo "============================================================"
+    echo -n "$SUMMARY"
+    echo "============================================================"
+} | tee -a "$LOG_FILE"
+
 exit 0
