@@ -49,7 +49,9 @@ LOG_FILE="$(cd "$LOG_DIR" && pwd)/$(basename "$LOG_FILE")"
 
 # Send everything - including the output of the docker/podman commands - to the
 # terminal and to the log file, so a failure reason is recorded as well
-exec > >(tee -a "$LOG_FILE") 2>&1
+# exec > >(tee -a "$LOG_FILE") 2>&1
+
+exec >> "$LOG_FILE" 2>&1
 
 # Function to print a separator line with date
 print_separator() {
@@ -290,11 +292,31 @@ if [[ "${UPDATE_PANGOLIN:-}" == "true" ]]; then
     log "Pangolin Update completed."
 fi
 
-# 11. ========== Docker System Prune ==========
+# 11. ========== OpenWebUI Update ==========
+if [[ "${UPDATE_OPENWEBUI:-}" == "true" ]]; then
+
+    require_compose "OpenWebUI" "${OPENWEBUI_COMPOSE_FILE:-}"
+
+    # 11.1 Docker Compose Down
+    log "Stopping OpenWebUI services..."
+    docker compose -f "$OPENWEBUI_COMPOSE_FILE" down || error "Failed to stop OpenWebUI services!"
+
+    # 11.2 Docker Compose Pull
+    log "Pulling latest OpenWebUI  Docker Images..."
+    docker compose -f "$OPENWEBUI_COMPOSE_FILE" pull || error "OpenWebUI Docker Compose Pull failed!"
+
+    # 11.3 Docker Compose Up
+    log "Starting OpenWebUI  services..."
+    docker compose -f "$OPENWEBUI_COMPOSE_FILE" up -d || error "OpenWebUI Docker Compose Up failed!"
+
+    log "OpenWebUI Update completed."
+fi
+
+# 12. ========== Docker System Prune ==========
 log "Removing unused Docker containers, images, networks, and build cache..."
 docker system prune -a -f || log "Docker System Prune failed."
 
-# 12. ========== Podman System Prune ==========
+# 13. ========== Podman System Prune ==========
 log "Removing unused Podman containers, images, networks, and build cache..."
 podman system prune -a -f || log "Podman System Prune failed."
 
